@@ -150,7 +150,7 @@ object RawReads {
       case err@_ ⇒ jsErrorInvalidJson(err)
     }
   }
-  val seqRawChannelReads: Reads[Seq[RawChannel]] = Reads.seq(rawChannelReads)
+
   implicit lazy val rawChannelReads: Reads[RawChannel] = new Reads[RawChannel] {
     override def reads(json: JsValue): JsResult[RawChannel] = json match {
       case JsObject(underlying) ⇒ (for {
@@ -177,6 +177,7 @@ object RawReads {
     }
   }
 
+  implicit lazy val seqRawChannelReads: Reads[Seq[RawChannel]] = Reads.seq(rawChannelReads)
 }
 
 object RawWrites {
