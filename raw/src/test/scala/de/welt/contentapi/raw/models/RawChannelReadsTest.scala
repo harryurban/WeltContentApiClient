@@ -38,12 +38,11 @@ class RawChannelReadsTest extends PlaySpec {
     "have the data of the deprecated field stages in field stageConfiguration by using the Reads and Writes" in new Fixture {
 
       // JsObject -> RawChannel with only deprecated field "stages"
-      val ch: RawChannel = j.result.validate[RawChannel](PartialRawChannelReads.noChildrenReads).get
+      val ch: RawChannel = j.result.validate[RawChannel](RawReads.rawChannelReads).get
       ch.stageConfiguration.flatMap(_.stages) must be(ch.stages)
 
 
       // RawChannel -> Json -> RawChannel with duplicated stages in stageConfiguration object
-      import PartialRawChannelWrites._
       private val json = Json.toJson(ch)(oneLevelOfChildren)
       private val reReadChannel = json.validate[RawChannel](RawReads.rawChannelReads).get
       reReadChannel.stageConfiguration.flatMap(_.stages) mustBe reReadChannel.stages
