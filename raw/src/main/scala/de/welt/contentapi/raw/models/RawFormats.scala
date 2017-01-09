@@ -150,7 +150,33 @@ object RawReads {
       case err@_ ⇒ jsErrorInvalidJson(err)
     }
   }
-  implicit lazy val rawChannelReads: Reads[RawChannel] = Json.reads[RawChannel]
+  val seqRawChannelReads: Reads[Seq[RawChannel]] = Reads.seq(rawChannelReads)
+  implicit lazy val rawChannelReads: Reads[RawChannel] = new Reads[RawChannel] {
+    override def reads(json: JsValue): JsResult[RawChannel] = json match {
+      case JsObject(underlying) ⇒ (for {
+        id ← underlying.get("id").map(_.as[RawChannelId])
+        config ← underlying.get("config").map(_.as[RawChannelConfiguration])
+        metadata ← underlying.get("metadata").map(_.as[RawMetadata])
+      } yield {
+        val maybeDeprecatedStages = underlying.get("stages").flatMap(_.asOpt[Seq[RawChannelStage]])
+        JsSuccess(
+          RawChannel(
+            id = id,
+            config = config,
+            stages = maybeDeprecatedStages,
+            stageConfiguration = Some(RawChannelStageConfiguration(stages = maybeDeprecatedStages)),
+            metadata = metadata,
+            parent = None,
+            children = underlying.get("children").flatMap(_.asOpt[Seq[RawChannel]](seqRawChannelReads)).getOrElse(Nil)
+          )
+        )
+      }
+        )
+        .getOrElse(jsErrorInvalidData("RawChannel[noChildren]", json))
+      case err@_ ⇒ jsErrorInvalidJson(err)
+    }
+  }
+
 }
 
 object RawWrites {
@@ -254,9 +280,7 @@ object PartialRawChannelReads {
             id = id,
             config = config,
             metadata = metadata,
-            stageConfiguration = underlying.get("stageConfiguration")
-              .map(_.as[RawChannelStageConfiguration])
-              .orElse(Some(RawChannelStageConfiguration(maybeDeprecatedStages))),
+            stageConfiguration = Some(RawChannelStageConfiguration(stages = maybeDeprecatedStages)),
             stages = maybeDeprecatedStages,
             children = Seq.empty
           ))
