@@ -26,7 +26,7 @@ class RawChannelReadsTest extends PlaySpec {
       ))
     }
 
-    "read json with the no children reads" in new Fixture {
+    "read json" in new Fixture {
       val ch: RawChannel = j.result.validate[RawChannel](RawReads.rawChannelReads).get
 
       ch.id.path must be("le-path")
