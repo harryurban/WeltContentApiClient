@@ -281,7 +281,9 @@ object PartialRawChannelReads {
             id = id,
             config = config,
             metadata = metadata,
-            stageConfiguration = Some(RawChannelStageConfiguration(stages = maybeDeprecatedStages)),
+            stageConfiguration = underlying.get("stageConfiguration")
+              .map(_.as[RawChannelStageConfiguration])
+              .orElse(maybeDeprecatedStages.map(stages => RawChannelStageConfiguration(stages = Some(stages)))),
             stages = maybeDeprecatedStages,
             children = Seq.empty
           ))
