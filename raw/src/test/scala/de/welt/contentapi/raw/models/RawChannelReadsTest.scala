@@ -43,7 +43,7 @@ class RawChannelReadsTest extends PlaySpec {
 
 
       // RawChannel -> Json -> RawChannel with duplicated stages in stageConfiguration object
-      private val json = Json.toJson(ch)(oneLevelOfChildren)
+      private val json = Json.toJson(ch)(PartialRawChannelWrites.oneLevelOfChildren)
       private val reReadChannel = json.validate[RawChannel](RawReads.rawChannelReads).get
       reReadChannel.stageConfiguration.flatMap(_.stages) mustBe reReadChannel.stages
     }
