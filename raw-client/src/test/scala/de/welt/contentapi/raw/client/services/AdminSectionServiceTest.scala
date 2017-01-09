@@ -20,7 +20,8 @@ class AdminSectionServiceTest extends PlaySpec with MockitoSugar {
     val s3 = mock[S3Client]
     val configData = Map(
       RawTreeServiceImpl.bucketConfigKey → "le-bucket",
-      RawTreeServiceImpl.fileConfigKey → "le-file")
+      RawTreeServiceImpl.folderConfigKey → "le-file"
+    )
     private val configuration = Configuration.from(configData)
     val asService = new AdminSectionServiceImpl(configuration, s3, Environment.simple(), mock[SdpSectionDataService], DisabledCache)
   }
@@ -42,7 +43,6 @@ class AdminSectionServiceTest extends PlaySpec with MockitoSugar {
       val bucket = configData.getOrElse(RawTreeServiceImpl.bucketConfigKey, "")
       val file = configData.getOrElse(RawTreeServiceImpl.fileConfigKey, "")
       verify(s3).putPrivate(Matchers.eq(bucket), startsWith(file), anyString(), contains("json"))
-
     }
 
     "update the [RawChannelConfiguration]" in new Fixture {
