@@ -164,7 +164,9 @@ object RawReads {
             id = id,
             config = config,
             stages = maybeDeprecatedStages,
-            stageConfiguration = Some(RawChannelStageConfiguration(stages = maybeDeprecatedStages)),
+            stageConfiguration = underlying.get("stageConfiguration")
+              .map(_.as[RawChannelStageConfiguration])
+              .orElse(maybeDeprecatedStages.map(stages => RawChannelStageConfiguration(stages = Some(stages)))),
             metadata = metadata,
             parent = None,
             children = underlying.get("children").flatMap(_.asOpt[Seq[RawChannel]](seqRawChannelReads)).getOrElse(Nil)
