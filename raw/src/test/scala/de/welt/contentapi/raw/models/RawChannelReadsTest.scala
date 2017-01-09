@@ -3,9 +3,9 @@ package de.welt.contentapi.raw.models
 import org.scalatestplus.play.PlaySpec
 import play.api.libs.json.{JsArray, JsNumber, JsObject, JsString, Json}
 
-class PartialRawChannelReadsTest extends PlaySpec {
+class RawChannelReadsTest extends PlaySpec {
 
-  "PartialRawChannelReads" should {
+  "RawChannelReads" should {
 
     trait Fixture {
       private val channelStage = RawChannelStage(Json.toJson(
@@ -27,7 +27,7 @@ class PartialRawChannelReadsTest extends PlaySpec {
     }
 
     "read json with the no children reads" in new Fixture {
-      val ch: RawChannel = j.result.validate[RawChannel](PartialRawChannelReads.noChildrenReads).get
+      val ch: RawChannel = j.result.validate[RawChannel](RawReads.rawChannelReads).get
 
       ch.id.path must be("le-path")
       val Some(stages) = ch.stages
@@ -45,7 +45,7 @@ class PartialRawChannelReadsTest extends PlaySpec {
       // RawChannel -> Json -> RawChannel with duplicated stages in stageConfiguration object
       import PartialRawChannelWrites._
       private val json = Json.toJson(ch)(oneLevelOfChildren)
-      private val reReadChannel = json.validate[RawChannel](PartialRawChannelReads.noChildrenReads).get
+      private val reReadChannel = json.validate[RawChannel](RawReads.rawChannelReads).get
       reReadChannel.stageConfiguration.flatMap(_.stages) mustBe reReadChannel.stages
     }
   }
