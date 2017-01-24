@@ -1,4 +1,4 @@
-![Logo](http://de5.engine.flamingtext.com/netfu/tmp28003/coollogo_com-187431304.png)
+![Logo](static/img/wcac_logo.png)
 
 Welt Content API Client
 =======================
