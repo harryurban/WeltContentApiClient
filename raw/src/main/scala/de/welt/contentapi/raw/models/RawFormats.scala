@@ -127,7 +127,7 @@ object RawReads {
           Json.fromJson[RawChannelStageCommercial](json)
         case RawChannelStage.curated ⇒
           Json.fromJson[RawChannelStageCurated](json)
-        case _⇒ Json.fromJson[RawChannelStageIgnored](json)
+        case _ ⇒ Json.fromJson[RawChannelStageIgnored](json)
       }
     }
   }
