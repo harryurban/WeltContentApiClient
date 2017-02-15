@@ -434,3 +434,7 @@ case class RawChannelStageCurated(index: Int,
 
 }
 
+case class RawChannelStageIgnored(index: Int, hidden: Boolean = true) extends RawChannelStage {
+  override val `type`: String = "unknown"
+}
+
