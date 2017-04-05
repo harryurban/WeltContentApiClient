@@ -211,7 +211,8 @@ object RawWrites {
     "hidden" → custom.hidden,
     "module" → custom.module,
     "references" → custom.references,
-    "overrides" → custom.overrides
+    "overrides" → custom.overrides,
+    "trackingName" → custom.trackingName
     )
   }
 
@@ -220,7 +221,8 @@ object RawWrites {
     "index" -> commercial.index,
     "type"  → RawChannelStage.TypeCommercial,
     "hidden" → commercial.hidden,
-    "format" → commercial.format
+    "format" → commercial.format,
+    "trackingName" → commercial.trackingName
     )
   }
 
@@ -234,7 +236,8 @@ object RawWrites {
     "layout" → curated.layout,
     "label" → curated.label,
     "logo" → curated.logo,
-    "references" → curated.references
+    "references" → curated.references,
+    "trackingName" → curated.trackingName
     )
   }
 

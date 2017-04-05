@@ -377,7 +377,8 @@ case class RawChannelStageCustomModule(override val index: Int,
                                        override val hidden: Boolean = false,
                                        module: String,
                                        references: Option[Seq[RawSectionReference]] = None,
-                                       overrides: Option[Map[String, String]] = None) extends RawChannelStage {
+                                       overrides: Option[Map[String, String]] = None,
+                                       trackingName: Option[String]) extends RawChannelStage {
   lazy val unwrappedReferences: Seq[RawSectionReference] = references.getOrElse(Nil)
 }
 
@@ -392,7 +393,8 @@ case class RawChannelStageCustomModule(override val index: Int,
 case class RawChannelStageCommercial(override val index: Int,
                                      override val `type`: String = RawChannelStage.TypeCommercial,
                                      override val hidden: Boolean = false,
-                                     format: String) extends RawChannelStage {
+                                     format: String,
+                                     trackingName: Option[String] = None) extends RawChannelStage {
 }
 
 
@@ -415,7 +417,8 @@ case class RawChannelStageCurated(override val index: Int,
                                   layout: Option[String],
                                   label: Option[String],
                                   logo: Option[String],
-                                  references: Option[Seq[RawSectionReference]] = None) extends RawChannelStage {
+                                  references: Option[Seq[RawSectionReference]] = None,
+                                  trackingName: Option[String]) extends RawChannelStage {
   lazy val unwrappedReferences: Seq[RawSectionReference] = references.getOrElse(Nil)
 
 }
@@ -426,7 +429,8 @@ case class RawChannelStageCurated(override val index: Int,
   */
 case class RawChannelStageIgnored(override val index: Int,
                                   override val `type`: String = RawChannelStage.TypeUnknown,
-                                  override val hidden: Boolean = true) extends RawChannelStage
+                                  override val hidden: Boolean = true,
+                                  trackingName: Option[String] = None) extends RawChannelStage
 object RawChannelStage {
   val TypeModule = "module"
   val TypeCustomModule = "custom-module"

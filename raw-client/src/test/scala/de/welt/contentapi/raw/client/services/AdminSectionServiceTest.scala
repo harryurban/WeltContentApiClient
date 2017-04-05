@@ -75,7 +75,7 @@ class AdminSectionServiceTest extends PlaySpec with MockitoSugar {
 
       // given
       val expectedModules = Some(Seq(RawChannelStageCustomModule(
-        index = 0, module = "foo"
+        index = 0, module = "foo", trackingName = Some("expected-tracking")
       )))
       val expectedStageConfig = Some(RawChannelStageConfiguration(stages = expectedModules))
       

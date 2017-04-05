@@ -15,11 +15,13 @@ class PartialRawChannelReadsTest extends PlaySpec {
       val originalModuleName = "module-for-partial-raw-channel-reads"
       val originalIndex = 99
       val originalOverrides = Some(Map("section" → "/foo/"))
+      val originalTrackingName = Some("custom-stage")
 
       private val customModule = RawChannelStageCustomModule(
         index = originalIndex,
         module = originalModuleName,
-        overrides = originalOverrides)
+        overrides = originalOverrides,
+        trackingName = originalTrackingName)
 
       val rawStageAsJson: JsValue = Json.toJson(customModule)
       private val channelStage = Json.fromJson(rawStageAsJson).asOpt.orNull
@@ -47,7 +49,7 @@ class PartialRawChannelReadsTest extends PlaySpec {
 
       ch.id.path must be("le-path")
       val Some(stages) = ch.stageConfiguration.flatMap(_.stages)
-      stages must be(Seq(RawChannelStageCustomModule(index = originalIndex, module = originalModuleName , overrides = originalOverrides)))
+      stages must be(Seq(RawChannelStageCustomModule(index = originalIndex, module = originalModuleName , overrides = originalOverrides, trackingName = originalTrackingName)))
 
     }
 
