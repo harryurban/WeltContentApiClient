@@ -176,13 +176,6 @@ object MyBuild extends Build {
     .dependsOn(withTests(pressed)).aggregate(pressed)
     .dependsOn(withTests(rawClient)).aggregate(rawClient)
 
-  val legacyClient = project("legacy-client")
-    .settings(
-      name := "welt-content-api-legacy-client"
-    )
-    .settings(clientDependencySettings: _*)
-    .dependsOn(withTests(pressedClient)).aggregate(pressedClient)
-
   val main = Project("Root", base = file("."))
     .settings(
       name := "welt-content-api-root"
@@ -192,6 +185,6 @@ object MyBuild extends Build {
       publish := {},
       bintrayUnpublish := {}
     )
-    .aggregate(core, coreClient, raw, rawClient, pressed, pressedClient, legacyClient)
+    .aggregate(core, coreClient, raw, rawClient, pressed, pressedClient)
 
 }
