@@ -44,11 +44,11 @@ val frontendDependencyManagementSettings = Seq(
 val coreDependencySettings = Seq(
   libraryDependencies ++= Seq(
     "com.typesafe.play" %% "play-json" % PlayVersion % Provided,
-    "com.typesafe.scala-logging" %% "scala-logging" % "3.5.0",
+    "com.typesafe.scala-logging" %% "scala-logging" % "3.7.2",
     "com.typesafe.play" %% "play-cache" % PlayVersion % Provided,
     // Info:
     // Prevent compile warnings of: `Class javax.annotation.Nullable not found - continuing with a stub.`
-    "com.google.code.findbugs" % "jsr305" % "3.0.1" % Compile,
+    "com.google.code.findbugs" % "jsr305" % "3.0.2" % Compile,
     "com.google.inject" % "guice" % "4.1.0",
 
     "org.mockito" % "mockito-core" % "1.10.19" % Test,
@@ -57,21 +57,21 @@ val coreDependencySettings = Seq(
 )
 val clientDependencySettings = Seq(
   libraryDependencies ++= Seq(
-    "org.asynchttpclient" % "async-http-client" % "2.0.32",
+    "org.asynchttpclient" % "async-http-client" % "2.0.36",
     "ch.qos.logback" % "logback-classic" % "1.2.3",
 
-    "com.amazonaws" % "aws-java-sdk-core" % "1.11.150",
-    "com.amazonaws" % "aws-java-sdk-s3" % "1.11.150",
+    "com.amazonaws" % "aws-java-sdk-core" % "1.11.197",
+    "com.amazonaws" % "aws-java-sdk-s3" % "1.11.197",
 
-    "com.typesafe" % "config" % "1.3.0" % Provided,
+    "com.typesafe" % "config" % "1.3.1" % Provided,
 
-    "com.typesafe.play" %% "play-ws" % "2.6.0-RC2" % Provided,
-    "com.typesafe.play" %% "play-cache" % "2.6.0-RC2" % Provided,
-    "com.typesafe.scala-logging" %% "scala-logging" % "3.5.0",
+    "com.typesafe.play" %% "play-ws" % PlayVersion % Provided,
+    "com.typesafe.play" %% "play-cache" % PlayVersion % Provided,
+    "com.typesafe.scala-logging" %% "scala-logging" % "3.7.2",
 
-    "de.welt" %% "metrics-play" % "2.6.2_37",
+    "de.welt" %% "metrics-play" % "2.6.5_52",
 
-    "org.scalatestplus.play" %% "scalatestplus-play" % "3.0.0-RC1" % Test,
+    "org.scalatestplus.play" %% "scalatestplus-play" % "3.1.2" % Test,
     "org.mockito" % "mockito-core" % "1.10.19" % Test
   )
 )
