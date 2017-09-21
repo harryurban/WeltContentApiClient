@@ -31,6 +31,7 @@ class AbstractServiceTest extends PlaySpec with MockitoSugar with Status {
     val mockTimerContext: Context = mock[Context]
 
     when(mockRequest.withHttpHeaders(Matchers.anyVararg())).thenReturn(mockRequest)
+    when(mockRequest.addHttpHeaders(Matchers.anyVararg())).thenReturn(mockRequest)
     when(mockRequest.withQueryStringParameters(Matchers.anyVararg[(String, String)])).thenReturn(mockRequest)
     when(mockRequest.withAuth(anyString, anyString, Matchers.eq(WSAuthScheme.BASIC))).thenReturn(mockRequest)
 
@@ -99,7 +100,7 @@ class AbstractServiceTest extends PlaySpec with MockitoSugar with Status {
     "forward the X-Unique-Id header" in new TestScopeBasicAuth {
       val headers = Seq(("X-Unique-Id", "0xdeadbeef"))
       new TestService().get(Seq("fake-id"), Seq.empty)(headers, defaultContext)
-      verify(mockRequest).withHttpHeaders(("X-Unique-Id", "0xdeadbeef"))
+      verify(mockRequest).addHttpHeaders(("X-Unique-Id", "0xdeadbeef"))
     }
 
     "forward the basic auth data" in new TestScopeBasicAuth {
@@ -116,6 +117,14 @@ class AbstractServiceTest extends PlaySpec with MockitoSugar with Status {
       verify(mockRequest).withHttpHeaders(("x-api-key", "foo"))
     }
 
+    "forward the api key and forwarded headers" in new TestScopeApiKey {
+      private val service = new TestService()
+      service.get(Seq("fake-id"), Seq("foo" -> "bar"))(Seq("X-Unique-Id" → "qux"), defaultContext)
+      service.config.credentials.left.getOrElse("")
+      verify(mockRequest).withHttpHeaders(("x-api-key", "foo"))
+      verify(mockRequest).addHttpHeaders(("X-Unique-Id", "qux"))
+    }
+
     "forward the query string data" in new TestScopeBasicAuth {
       new TestService().get(Seq("fake-id"), Seq("foo" -> "bar"))
       verify(mockRequest).withQueryStringParameters(("foo", "bar"))
@@ -124,7 +133,7 @@ class AbstractServiceTest extends PlaySpec with MockitoSugar with Status {
     "forward the headers" in new TestScopeBasicAuth {
       implicit val requestHeaders: RequestHeaders = Seq("X-Unique-Id" -> "bar")
       new TestService().get(Seq("fake-id"), Seq.empty)
-      verify(mockRequest).withHttpHeaders(("X-Unique-Id", "bar"))
+      verify(mockRequest).addHttpHeaders(("X-Unique-Id", "bar"))
     }
 
     "strip whitespaces and newline from the parameter" in new TestScopeBasicAuth {

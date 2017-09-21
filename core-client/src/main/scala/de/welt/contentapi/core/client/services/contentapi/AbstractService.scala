@@ -14,6 +14,7 @@ import play.api.mvc.Headers
 
 import scala.concurrent.{ExecutionContext, Future}
 
+//noinspection ScalaStyle
 trait AbstractService[T] extends Strings with Loggable with Status with HeaderNames {
 
   val HEADER_API_KEY = "x-api-key"
@@ -82,7 +83,7 @@ trait AbstractService[T] extends Strings with Loggable with Status with HeaderNa
     log.debug(s"HTTP GET to ${authenticatedGetRequest.uri}")
 
     authenticatedGetRequest
-      .withHttpHeaders(forwardHeaders(forwardedRequestHeaders): _*)
+      .addHttpHeaders(forwardHeaders(forwardedRequestHeaders): _*)
       .get().map { response ⇒
 
       context.stop()
@@ -102,7 +103,7 @@ trait AbstractService[T] extends Strings with Loggable with Status with HeaderNa
     * @param maybeHeaders [[Headers]] from the incoming [[play.api.mvc.Request]]
     * @return tuples of type String for headers to be forwarded
     */
-  def forwardHeaders(maybeHeaders: RequestHeaders): RequestHeaders = {
+  private def forwardHeaders(maybeHeaders: RequestHeaders): RequestHeaders = {
     maybeHeaders.collect { case tuple@("X-Unique-Id", _) ⇒ tuple }
   }
 
