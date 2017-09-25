@@ -51,7 +51,7 @@ class RawTreeServiceImpl @Inject()(s3Client: S3Client,
   protected def objectKeyForEnv(env: Env): String = s"$folder/$mode/${env.toString}/config.json"
 
   // todo (mana): add metrics
-  def root(implicit env: Env): Option[RawChannel] = {
+  def root(implicit env: Env): Option[RawChannel] = this.synchronized {
     cache.getOrElseUpdate(s"rawChannelData-$env", 1.minutes) {
       s3Client.get(bucket, objectKeyForEnv(env)).flatMap { tree ⇒
         Json.parse(tree).validate[RawChannel](de.welt.contentapi.raw.models.RawReads.rawChannelReads) match {

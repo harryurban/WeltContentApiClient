@@ -22,8 +22,7 @@ sealed trait S3Client extends Loggable {
 
   val client: AmazonS3Client = {
     val endpoint = config.get[String](EndpointConfigKey)
-    val clazz = classOf[Environment]
-    println("Environment jar" + clazz.getResource("/" + clazz.getName.replace('.', '/') + ".class"))
+
     val s3Client = environment.mode match {
       case play.api.Mode.Prod ⇒ new AmazonS3Client()
       case _ ⇒ new AmazonS3Client(
