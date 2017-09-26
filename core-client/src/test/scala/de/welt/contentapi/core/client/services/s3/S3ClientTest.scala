@@ -1,13 +1,11 @@
-package de.welt.client
+package de.welt.contentapi.core.client.services.s3
 
 import java.io.File
 
-import com.amazonaws.services.s3.AmazonS3Client
+import com.amazonaws.services.s3.{AmazonS3, AmazonS3Client}
 import com.typesafe.config.ConfigException
-import com.typesafe.config.ConfigException.Missing
-import de.welt.contentapi.core.client.services.s3.S3ClientImpl
 import org.scalatestplus.play.PlaySpec
-import play.api.{Configuration, Environment, Mode, PlayException}
+import play.api.{Configuration, Environment, Mode}
 
 class S3ClientTest extends PlaySpec {
 
@@ -22,11 +20,11 @@ class S3ClientTest extends PlaySpec {
 
       "return s3Client if s3 endpoint is set" in {
         val s3 = new S3ClientImpl(
-          config = Configuration("welt.aws.s3.endpoint" → "s3.eu-central-1.amazonaws.com"),
+          config = Configuration(S3ClientConstants.RegionConfigKey → "eu-central-1"),
           environment = prodEnv
         )
 
-        s3.client mustBe an[AmazonS3Client]
+        s3.client mustBe an[AmazonS3]
       }
 
       "throw BadConfigurationException without config for s3 endpoint in Prod Mode" in {
@@ -45,7 +43,7 @@ class S3ClientTest extends PlaySpec {
       "return s3Client if s3 endpoint and AWS credentials are set" in {
         val s3 = new S3ClientImpl(
           config = Configuration(
-            "welt.aws.s3.endpoint" → "s3.eu-central-1.amazonaws.com",
+            S3ClientConstants.RegionConfigKey → "eu-central-1",
             "welt.aws.s3.dev.accessKey" → "accessKey",
             "welt.aws.s3.dev.secretKey" → "secretKey"
           ),

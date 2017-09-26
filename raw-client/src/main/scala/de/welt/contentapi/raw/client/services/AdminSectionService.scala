@@ -77,6 +77,15 @@ class AdminSectionServiceImpl @Inject()(config: Configuration,
     log.info(s"[Sync] took ${stopwatch.stop.toString}")
   }
 
+  override def root(env: Env): Option[RawChannel] = super.root(env).orElse {
+    log.warn("No data found in s3 bucket, creating new data set from scratch.")
+    val root = legacySectionService.getSectionData.toChannel
+
+    saveChannel(root)(Preview)
+    saveChannel(root)(Live)
+    Some(root)
+  }
+
   private def saveChannel(ch: RawChannel)(implicit env: Env) = {
     import de.welt.contentapi.raw.models.FullRawChannelWrites._
 
@@ -86,13 +95,12 @@ class AdminSectionServiceImpl @Inject()(config: Configuration,
     log.info(s"saving channel tree to s3 -> ${objectKeyForEnv(env)}")
 
     s3.putPrivate(bucket, objectKeyForEnv(env), serializedChannelData, "application/json")
-
-    log.debug("Invalidating cache.")
-    update
   }
 
   def save(implicit env: Env) = {
     root(env).foreach(r ⇒ saveChannel(r))
+    log.debug("Invalidating cache.")
+    update()
   }
 }
 

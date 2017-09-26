@@ -24,6 +24,7 @@ val frontendCompilationSettings = Seq(
 
   fork in Test := true,
   javaOptions in Test += "-Xmx2048M",
+  javaOptions in Test += "-Dconfig.resource=application.test.conf",
   javaOptions in Test += "-XX:+UseConcMarkSweepGC",
   javaOptions in Test += "-XX:ReservedCodeCacheSize=128m",
   javaOptions in Test += "-XX:MaxMetaspaceSize=512m",

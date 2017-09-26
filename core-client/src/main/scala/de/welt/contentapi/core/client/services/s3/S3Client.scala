@@ -15,14 +15,12 @@ import scala.io.{Codec, Source}
 
 sealed trait S3Client extends Loggable {
 
-  private val RegionConfigKey = "welt.aws.s3.endpoint"
-
   val config: Configuration
   val environment: Environment
   implicit val codec: Codec = Codec.UTF8
 
   val client: AmazonS3 = {
-    val region: Regions = Regions.fromName(config.get[String](RegionConfigKey))
+    val region: Regions = Regions.fromName(config.get[String](S3ClientConstants.RegionConfigKey))
 
     log.debug(s"s3 connected to $region")
 
@@ -94,3 +92,7 @@ sealed trait S3Client extends Loggable {
 
 @Singleton
 class S3ClientImpl @Inject()(override val config: Configuration, override val environment: Environment) extends S3Client {}
+
+object S3ClientConstants {
+  protected[s3] val RegionConfigKey = "welt.aws.s3.region"
+}

@@ -84,7 +84,7 @@ class PressedContentServiceTest extends PlaySpec with MockitoSugar {
     when(contentService
       .find(id = articleId, showRelated = true)(Seq.empty, executionContext))
       .thenReturn(eventualApiResponse)
-    when(rawTreeService.root.get(any())).thenReturn(Some(root))
+    when(rawTreeService.root(any())).thenReturn(Some(root))
 
     // When
     val eventualPressedContent: Future[ApiPressedContent] = pressedContentService.find(articleId, showRelated = true)(Seq.empty, executionContext)

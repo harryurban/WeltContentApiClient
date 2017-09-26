@@ -38,6 +38,7 @@ class AdminSectionServiceTest extends PlaySpec with MockitoSugar {
       when(s3.get(anyString, anyString)).thenReturn(Some(json))
 
       // when
+      asService.update()
       asService.updateChannel(root, root.copy(config = RawChannelConfiguration()), "le-user")
 
       // then
@@ -60,6 +61,7 @@ class AdminSectionServiceTest extends PlaySpec with MockitoSugar {
 
       // when
       when(s3.get(anyString, anyString)).thenReturn(Some(json))
+      asService.update()
       asService.updateChannel(
         testChannel,
         testChannel.copy(
@@ -85,13 +87,8 @@ class AdminSectionServiceTest extends PlaySpec with MockitoSugar {
       when(s3.get(anyString, anyString)).thenReturn(Some(json))
 
       // when
-      asService.updateChannel(
-        testChannel,
-        testChannel.copy(
-          stageConfiguration = expectedStageConfig
-        ),
-        "le-user"
-      )
+      asService.update()
+      asService.updateChannel(testChannel,testChannel.copy(stageConfiguration = expectedStageConfig),"le-user")
       
       // then
       testChannel.stageConfiguration mustBe expectedStageConfig

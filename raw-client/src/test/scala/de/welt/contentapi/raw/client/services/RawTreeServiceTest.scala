@@ -36,7 +36,8 @@ class RawTreeServiceTest extends PlaySpec with MockitoSugar {
       val service = new RawTreeServiceImpl(s3Client, config = config, environment = environment, TestExecutionContext.executionContext)
 
       // when
-      service.root.get(Live)
+      service.update()
+      service.root(Live)
 
       // then
       Mockito.verify(s3Client).get(expectedBucket, s"$expectedFolder/$expectedMode/Live/config.json")
@@ -51,7 +52,8 @@ class RawTreeServiceTest extends PlaySpec with MockitoSugar {
       val service = new RawTreeServiceImpl(s3Client, config = config, environment = environment, TestExecutionContext.executionContext)
 
       // when
-      service.root.get(Live)
+      service.update()
+      service.root(Live)
 
       // then
       Mockito.verify(s3Client).get(expectedBucket, s"$expectedFolder/$expectedPlayMode/Live/config.json")

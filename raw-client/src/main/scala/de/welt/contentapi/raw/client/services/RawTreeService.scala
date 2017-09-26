@@ -13,7 +13,7 @@ import play.api.{Configuration, Environment, Mode}
 import scala.concurrent.duration._
 
 trait RawTreeService {
-  def root: Env ⇒ Option[RawChannel]
+  def root(env: Env): Option[RawChannel]
 }
 
 @Singleton
@@ -29,11 +29,9 @@ class RawTreeServiceImpl @Inject()(s3Client: S3Client,
   protected[services] val folder: String = config.get[String](folderConfigKey)
 
   // start cron to update the tree automatically
-  capiContext.actorSystem.scheduler.schedule(50.milliseconds, 1.minute, () ⇒ {
-    data = update
-  })
+  capiContext.actorSystem.scheduler.schedule(100.milliseconds, 1.minute, () ⇒ update())
 
-  override def root: Env ⇒ Option[RawChannel] = env ⇒ data.get(env)
+  override def root(env: Env): Option[RawChannel] = data.get(env)
 
   /**
     * prod/dev/local-dev mode
@@ -49,14 +47,14 @@ class RawTreeServiceImpl @Inject()(s3Client: S3Client,
 
   protected def objectKeyForEnv(env: Env): String = s"$folder/$mode/${env.toString}/config.json"
 
-  protected[services] def update: Map[Env, RawChannel] = {
+  protected[services] def update(): Unit = {
     val treeByEnv = for {env ← Seq(Live, Preview)} yield {
       s3Client.get(bucket, objectKeyForEnv(env)).flatMap { tree ⇒
         Json.parse(tree).validate[RawChannel](de.welt.contentapi.raw.models.RawReads.rawChannelReads) match {
-          case JsSuccess(data, _) ⇒
+          case JsSuccess(parsedTree, _) ⇒
             log.info(s"Loaded/Refreshed raw tree for $env")
-            data.updateParentRelations()
-            val someTuple: Option[(Env, RawChannel)] = Some(env → data)
+            parsedTree.updateParentRelations()
+            val someTuple: Option[(Env, RawChannel)] = Some(env → parsedTree)
             someTuple
           case e: JsError ⇒
             log.error(f"JsError parsing S3 file: '$bucket/$folder'. " + JsError.toJson(e).toString())
@@ -64,7 +62,7 @@ class RawTreeServiceImpl @Inject()(s3Client: S3Client,
         }
       }
     }
-    treeByEnv.collect {
+    data = treeByEnv.collect {
       case Some(y) ⇒ y
     }.toMap
   }

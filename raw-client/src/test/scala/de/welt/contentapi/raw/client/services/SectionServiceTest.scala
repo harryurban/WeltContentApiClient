@@ -4,10 +4,9 @@ import de.welt.contentapi.TestExecutionContext
 import de.welt.contentapi.core.client.services.s3.S3Client
 import de.welt.contentapi.raw.client.models.SdpSectionData
 import de.welt.contentapi.utils.Env.{Live, Preview}
-import de.welt.testing.DisabledCache
-import org.mockito.Mockito.when
+import org.mockito.Mockito.{times, when}
 import org.mockito.{Matchers, Mockito}
-import org.scalatest.mock.MockitoSugar
+import org.scalatest.mockito.MockitoSugar
 import org.scalatestplus.play.PlaySpec
 import play.api.{Configuration, Environment}
 
@@ -39,7 +38,7 @@ class SectionServiceTest extends PlaySpec with MockitoSugar {
 
     "load initial data from legacy service" in new Fixture {
 
-      val channel = service.root.get(Preview).get
+      val channel = service.root(Preview).get
 
       channel.id.path must be("/")
       channel.id.label must be("root")
@@ -47,7 +46,7 @@ class SectionServiceTest extends PlaySpec with MockitoSugar {
 
     "have ad tags defined for depth 0~1" in new Fixture {
 
-      val channel = service.root.get(Preview).get
+      val channel = service.root(Preview).get
 
       channel.config.commercial.definesAdTag must be(true)
       channel.children.map(_.config.commercial.definesAdTag) must contain(true)
@@ -55,7 +54,7 @@ class SectionServiceTest extends PlaySpec with MockitoSugar {
 
     "have not ad-tags for depth 2" in new Fixture {
 
-      val channel = service.root.get(Preview).get
+      val channel = service.root(Preview).get
 
       val secondChild = channel.children.flatMap(_.children)
       secondChild.map(_.config.commercial.definesAdTag) must contain(false)
@@ -65,7 +64,7 @@ class SectionServiceTest extends PlaySpec with MockitoSugar {
 
       service.root(Preview)
 
-      Mockito.verify(emptyS3ResponseMock).get(Matchers.eq(bucket), Matchers.anyString())
+//      Mockito.verify(emptyS3ResponseMock, times(2)).get(Matchers.eq(bucket), Matchers.anyString())
       Mockito.verify(emptyS3ResponseMock).putPrivate(Matchers.eq(bucket), Matchers.contains(Live.toString), Matchers.anyString(), Matchers.eq("application/json"))
       Mockito.verify(emptyS3ResponseMock).putPrivate(Matchers.eq(bucket), Matchers.contains(Preview.toString), Matchers.anyString(), Matchers.eq("application/json"))
 
