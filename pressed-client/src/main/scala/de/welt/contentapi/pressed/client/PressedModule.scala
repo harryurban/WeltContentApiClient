@@ -8,8 +8,6 @@ class PressedModule extends AbstractModule {
 
   override def configure() = {
 
-    install(new de.welt.contentapi.core.client.CoreModule())
-
     bind(classOf[PressedS3Client]).to(classOf[PressedS3ClientImpl])
     bind(classOf[PressedDiggerClient]).to(classOf[PressedDiggerClientImpl])
     bind(classOf[PressedContentService]).to(classOf[PressedContentServiceImpl])

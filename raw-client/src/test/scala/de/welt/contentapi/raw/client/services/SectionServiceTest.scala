@@ -1,5 +1,6 @@
 package de.welt.contentapi.raw.client.services
 
+import de.welt.contentapi.TestExecutionContext
 import de.welt.contentapi.core.client.services.s3.S3Client
 import de.welt.contentapi.raw.client.models.SdpSectionData
 import de.welt.contentapi.utils.Env.{Live, Preview}
@@ -31,14 +32,14 @@ class SectionServiceTest extends PlaySpec with MockitoSugar {
     val legacyServiceMock = mock[SdpSectionDataService]
     when(legacyServiceMock.getSectionData) thenReturn root
 
-    val service = new AdminSectionServiceImpl(config, emptyS3ResponseMock, Environment.simple(), legacyServiceMock, DisabledCache)
+    val service = new AdminSectionServiceImpl(config, emptyS3ResponseMock, Environment.simple(), legacyServiceMock, TestExecutionContext.executionContext)
   }
 
   "SectionConfigurationService with empty initial s3 response" must {
 
     "load initial data from legacy service" in new Fixture {
 
-      val channel = service.root(Preview).get
+      val channel = service.root.get(Preview).get
 
       channel.id.path must be("/")
       channel.id.label must be("root")
@@ -46,7 +47,7 @@ class SectionServiceTest extends PlaySpec with MockitoSugar {
 
     "have ad tags defined for depth 0~1" in new Fixture {
 
-      val channel = service.root(Preview).get
+      val channel = service.root.get(Preview).get
 
       channel.config.commercial.definesAdTag must be(true)
       channel.children.map(_.config.commercial.definesAdTag) must contain(true)
@@ -54,7 +55,7 @@ class SectionServiceTest extends PlaySpec with MockitoSugar {
 
     "have not ad-tags for depth 2" in new Fixture {
 
-      val channel = service.root(Preview).get
+      val channel = service.root.get(Preview).get
 
       val secondChild = channel.children.flatMap(_.children)
       secondChild.map(_.config.commercial.definesAdTag) must contain(false)

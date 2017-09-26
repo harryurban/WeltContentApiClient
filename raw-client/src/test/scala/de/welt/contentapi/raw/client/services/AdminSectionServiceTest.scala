@@ -1,5 +1,6 @@
 package de.welt.contentapi.raw.client.services
 
+import de.welt.contentapi.TestExecutionContext
 import de.welt.contentapi.core.client.services.s3.S3Client
 import de.welt.contentapi.raw.models.FullRawChannelWrites.channelWrites
 import de.welt.contentapi.raw.models.{RawChannelConfiguration, RawChannelHeader, RawChannelStageConfiguration, RawChannelStageCustomModule}
@@ -23,7 +24,7 @@ class AdminSectionServiceTest extends PlaySpec with MockitoSugar {
       RawTreeServiceImpl.folderConfigKey → "le-file"
     )
     private val configuration = Configuration.from(configData)
-    val asService = new AdminSectionServiceImpl(configuration, s3, Environment.simple(), mock[SdpSectionDataService], DisabledCache)
+    val asService = new AdminSectionServiceImpl(configuration, s3, Environment.simple(), mock[SdpSectionDataService], TestExecutionContext.executionContext)
   }
 
   "AdminSectionService" should {

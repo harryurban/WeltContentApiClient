@@ -14,7 +14,7 @@ import de.welt.testing.TestHelper.raw.configuration._
 import org.mockito.Matchers.any
 import org.mockito.Mockito._
 import org.scalatest.Matchers._
-import org.scalatest.mock.MockitoSugar
+import org.scalatest.mockito.MockitoSugar
 import org.scalatestplus.play.PlaySpec
 
 import scala.concurrent.{Await, ExecutionContext, Future}
@@ -84,7 +84,7 @@ class PressedContentServiceTest extends PlaySpec with MockitoSugar {
     when(contentService
       .find(id = articleId, showRelated = true)(Seq.empty, executionContext))
       .thenReturn(eventualApiResponse)
-    when(rawTreeService.root(any())).thenReturn(Some(root))
+    when(rawTreeService.root.get(any())).thenReturn(Some(root))
 
     // When
     val eventualPressedContent: Future[ApiPressedContent] = pressedContentService.find(articleId, showRelated = true)(Seq.empty, executionContext)

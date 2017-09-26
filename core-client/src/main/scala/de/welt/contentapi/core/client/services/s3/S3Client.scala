@@ -3,9 +3,10 @@ package de.welt.contentapi.core.client.services.s3
 import java.time.Instant
 import javax.inject.{Inject, Singleton}
 
-import com.amazonaws.auth.BasicAWSCredentials
-import com.amazonaws.services.s3.AmazonS3Client
+import com.amazonaws.auth.{AWSStaticCredentialsProvider, BasicAWSCredentials}
+import com.amazonaws.regions.Regions
 import com.amazonaws.services.s3.model._
+import com.amazonaws.services.s3.{AmazonS3, AmazonS3Client, AmazonS3ClientBuilder}
 import com.amazonaws.util.StringInputStream
 import de.welt.contentapi.utils.Loggable
 import play.api.{Configuration, Environment}
@@ -14,27 +15,29 @@ import scala.io.{Codec, Source}
 
 sealed trait S3Client extends Loggable {
 
-  private val EndpointConfigKey = "welt.aws.s3.endpoint"
+  private val RegionConfigKey = "welt.aws.s3.endpoint"
 
   val config: Configuration
   val environment: Environment
   implicit val codec: Codec = Codec.UTF8
 
-  val client: AmazonS3Client = {
-    val endpoint = config.get[String](EndpointConfigKey)
+  val client: AmazonS3 = {
+    val region: Regions = Regions.fromName(config.get[String](RegionConfigKey))
 
-    val s3Client = environment.mode match {
-      case play.api.Mode.Prod ⇒ new AmazonS3Client()
-      case _ ⇒ new AmazonS3Client(
-        new BasicAWSCredentials(
-          config.get[String]("welt.aws.s3.dev.accessKey"),
-          config.get[String]("welt.aws.s3.dev.secretKey")
+    log.debug(s"s3 connected to $region")
+
+    (environment.mode match {
+      case play.api.Mode.Prod ⇒ AmazonS3Client.builder()
+      case _ ⇒ AmazonS3Client.builder()
+        .withCredentials(
+          new AWSStaticCredentialsProvider(
+            new BasicAWSCredentials(
+              config.get[String]("welt.aws.s3.dev.accessKey"),
+              config.get[String]("welt.aws.s3.dev.secretKey")
+            )
+          )
         )
-      )
-    }
-    s3Client.setEndpoint(endpoint)
-    log.debug(s"s3 connected to $endpoint")
-    s3Client
+    }).withRegion(region).build()
   }
 
   def get(bucket: String, key: String): Option[String] = withS3Result(bucket, key)({

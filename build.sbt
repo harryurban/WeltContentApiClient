@@ -6,9 +6,9 @@ import scoverage.ScoverageSbtPlugin.autoImport._
 
 import scala.util.Properties
 
-val isSnapshot = false
+val isSnapshot = true
 val PlayVersion = "2.6.5"
-val actualVersion: String = s"1.1.${Properties.envOrElse("BUILD_NUMBER", "0-SNAPSHOT")}"
+val actualVersion: String = s"1.1.${Properties.envOrElse("BUILD_NUMBER", "0-local")}"
 
 def withTests(project: Project) = project % "test->test;compile->compile"
 
@@ -18,7 +18,7 @@ val frontendCompilationSettings = Seq(
   version in ThisBuild := s"${actualVersion}_${PlayVersion}${if (isSnapshot) "-SNAPSHOT" else ""}",
 
   licenses += ("MIT", url("http://opensource.org/licenses/MIT")),
-  javacOptions ++= Seq("-deprecation", "-source", "1.8", "-target", "1.8"),
+  javacOptions ++= Seq("-deprecation", "-source", "-opt:l:default"),
   publishArtifact in Test := false,
   promptTheme := com.scalapenos.sbt.prompt.PromptThemes.ScalapenosTheme,
 

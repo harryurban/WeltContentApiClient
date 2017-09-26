@@ -1,8 +1,8 @@
 package de.welt.contentapi.raw.client.services
 
+import de.welt.contentapi.TestExecutionContext
 import de.welt.contentapi.core.client.services.s3.S3Client
-import de.welt.contentapi.utils.Env
-import de.welt.testing.DisabledCache
+import de.welt.contentapi.utils.Env.Live
 import org.mockito.{Matchers, Mockito}
 import org.scalatest.mockito.MockitoSugar
 import org.scalatestplus.play.PlaySpec
@@ -33,10 +33,10 @@ class RawTreeServiceTest extends PlaySpec with MockitoSugar {
         RawTreeServiceImpl.folderConfigKey → expectedFolder,
         RawTreeServiceImpl.modeConfigKey → expectedMode
       )
-      val service = new RawTreeServiceImpl(s3Client, config = config, environment = environment, DisabledCache)
+      val service = new RawTreeServiceImpl(s3Client, config = config, environment = environment, TestExecutionContext.executionContext)
 
       // when
-      service.root(env = Env.Live)
+      service.root.get(Live)
 
       // then
       Mockito.verify(s3Client).get(expectedBucket, s"$expectedFolder/$expectedMode/Live/config.json")
@@ -48,10 +48,10 @@ class RawTreeServiceTest extends PlaySpec with MockitoSugar {
         RawTreeServiceImpl.bucketConfigKey → expectedBucket,
         RawTreeServiceImpl.folderConfigKey → expectedFolder
       )
-      val service = new RawTreeServiceImpl(s3Client, config = config, environment = environment, DisabledCache)
+      val service = new RawTreeServiceImpl(s3Client, config = config, environment = environment, TestExecutionContext.executionContext)
 
       // when
-      service.root(env = Env.Live)
+      service.root.get(Live)
 
       // then
       Mockito.verify(s3Client).get(expectedBucket, s"$expectedFolder/$expectedPlayMode/Live/config.json")

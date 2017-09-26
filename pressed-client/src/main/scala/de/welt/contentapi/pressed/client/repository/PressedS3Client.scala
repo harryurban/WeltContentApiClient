@@ -1,8 +1,8 @@
 package de.welt.contentapi.pressed.client.repository
 
 import java.time.Instant
-import javax.inject.{Inject, Singleton}
 
+import com.google.inject.{Inject, Singleton}
 import de.welt.contentapi.core.client.services.s3.S3Client
 import de.welt.contentapi.pressed.models.ApiPressedSectionResponse
 import de.welt.contentapi.pressed.models.PressedReads.apiPressedSectionResponseReads

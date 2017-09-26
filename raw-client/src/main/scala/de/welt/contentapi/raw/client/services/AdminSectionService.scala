@@ -4,11 +4,11 @@ import java.time.Instant
 import javax.inject.{Inject, Singleton}
 
 import com.google.common.base.Stopwatch
+import de.welt.contentapi.core.client.services.CapiExecutionContext
 import de.welt.contentapi.core.client.services.s3.S3Client
 import de.welt.contentapi.raw.models.{ChannelUpdate, RawChannel}
 import de.welt.contentapi.utils.Env.{Env, Live, Preview}
 import de.welt.contentapi.utils.Loggable
-import play.api.cache.{CacheApi, SyncCacheApi}
 import play.api.libs.json.{JsValue, Json}
 import play.api.{Configuration, Environment}
 
@@ -30,8 +30,8 @@ class AdminSectionServiceImpl @Inject()(config: Configuration,
                                         s3: S3Client,
                                         environment: Environment,
                                         legacySectionService: SdpSectionDataService,
-                                        cache: SyncCacheApi)
-  extends RawTreeServiceImpl(s3, config, environment, cache) with AdminSectionService with Loggable {
+                                        capiContext: CapiExecutionContext)
+  extends RawTreeServiceImpl(s3, config, environment, capiContext) with AdminSectionService with Loggable {
 
   override def updateChannel(channel: RawChannel, channelWithUpdates: RawChannel, user: String)
                             (implicit env: Env): Option[RawChannel] = {
@@ -52,7 +52,7 @@ class AdminSectionServiceImpl @Inject()(config: Configuration,
     save
 
     // reload changes from s3
-    val freshRootNode = root
+    val freshRootNode = root(env)
     val updatedChannel = freshRootNode.flatMap(_.findByPath(channel.id.path))
     log.debug(s"Updated Channel from fresh s3 data $updatedChannel")
     updatedChannel
@@ -77,15 +77,6 @@ class AdminSectionServiceImpl @Inject()(config: Configuration,
     log.info(s"[Sync] took ${stopwatch.stop.toString}")
   }
 
-  override def root(implicit env: Env): Option[RawChannel] = super.root.orElse {
-    log.warn("No data found in s3 bucket, creating new data set from scratch.")
-    val root = legacySectionService.getSectionData.toChannel
-
-    saveChannel(root)(Preview)
-    saveChannel(root)(Live)
-    Some(root)
-  }
-
   private def saveChannel(ch: RawChannel)(implicit env: Env) = {
     import de.welt.contentapi.raw.models.FullRawChannelWrites._
 
@@ -97,11 +88,11 @@ class AdminSectionServiceImpl @Inject()(config: Configuration,
     s3.putPrivate(bucket, objectKeyForEnv(env), serializedChannelData, "application/json")
 
     log.debug("Invalidating cache.")
-    cache.remove(env.toString)
+    update
   }
 
   def save(implicit env: Env) = {
-    root.foreach(r ⇒ saveChannel(r))
+    root(env).foreach(r ⇒ saveChannel(r))
   }
 }
 
