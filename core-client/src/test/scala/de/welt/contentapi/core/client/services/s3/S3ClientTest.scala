@@ -31,7 +31,7 @@ class S3ClientTest extends PlaySpec {
         an[ConfigException.Missing] should be thrownBy new S3ClientImpl(
           config = Configuration(),
           environment = prodEnv
-        )
+        ).client
       }
 
     }
@@ -56,7 +56,7 @@ class S3ClientTest extends PlaySpec {
         an[ConfigException.Missing] should be thrownBy new S3ClientImpl(
           config = Configuration("welt.aws.s3.endpoint" → "s3.eu-central-1.amazonaws.com"),
           environment = devEnv
-        )
+        ).client
       }
     }
 
