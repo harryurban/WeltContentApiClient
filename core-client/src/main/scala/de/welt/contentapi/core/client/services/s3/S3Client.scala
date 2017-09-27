@@ -19,7 +19,7 @@ sealed trait S3Client extends Loggable {
   val environment: Environment
   implicit val codec: Codec = Codec.UTF8
 
-  val client: AmazonS3 = {
+  lazy val client: AmazonS3 = {
     val region: Regions = Regions.fromName(config.get[String](S3ClientConstants.RegionConfigKey))
 
     log.debug(s"s3 connected to $region")
