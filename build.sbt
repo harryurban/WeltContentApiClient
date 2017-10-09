@@ -7,7 +7,7 @@ import scoverage.ScoverageSbtPlugin.autoImport._
 import scala.util.Properties
 
 val isSnapshot = false
-val PlayVersion = "2.6.5"
+val PlayVersion = "2.6.6"
 val actualVersion: String = s"1.1.${Properties.envOrElse("BUILD_NUMBER", "0-local")}"
 
 def withTests(project: Project) = project % "test->test;compile->compile"
@@ -58,11 +58,11 @@ val coreDependencySettings = Seq(
 )
 val clientDependencySettings = Seq(
   libraryDependencies ++= Seq(
-    "org.asynchttpclient" % "async-http-client" % "2.0.36",
+    "org.asynchttpclient" % "async-http-client" % "2.0.37",
     "ch.qos.logback" % "logback-classic" % "1.2.3",
 
-    "com.amazonaws" % "aws-java-sdk-core" % "1.11.197",
-    "com.amazonaws" % "aws-java-sdk-s3" % "1.11.197",
+    "com.amazonaws" % "aws-java-sdk-core" % "1.11.210",
+    "com.amazonaws" % "aws-java-sdk-s3" % "1.11.210",
 
     "com.typesafe" % "config" % "1.3.1" % Provided,
 
@@ -70,7 +70,7 @@ val clientDependencySettings = Seq(
     "com.typesafe.play" %% "play-cache" % PlayVersion % Provided,
     "com.typesafe.scala-logging" %% "scala-logging" % "3.7.2",
 
-    "de.welt" %% "metrics-play" % "2.6.5_52",
+    "de.welt" %% "metrics-play" % "2.6.6_53",
 
     "org.scalatestplus.play" %% "scalatestplus-play" % "3.1.2" % Test,
     "org.mockito" % "mockito-core" % "1.10.19" % Test
