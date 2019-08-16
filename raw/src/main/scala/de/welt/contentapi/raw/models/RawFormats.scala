@@ -3,6 +3,8 @@ package de.welt.contentapi.raw.models
 import play.api.libs.functional.syntax._
 import play.api.libs.json._
 
+import scala.collection.immutable.HashMap
+
 object RawFormats {
 
   import RawReads._
@@ -250,7 +252,11 @@ object RawReads {
             .getOrElse(defaults.sponsoring),
           siteBuilding = underlying.get("siteBuilding")
               .map(_.as[RawChannelSiteBuilding])
-              .filterNot(_.isEmpty),
+              .filterNot(_.isEmpty)
+            .orElse(migrateHeaderToSitebuildingFields(
+              underlying.get("header").map(_.as[RawChannelHeader]),
+              underlying.get("sponsoring").map(_.as[RawSponsoringConfig]))
+            ),
           theme = underlying.get("theme").map(_.as[RawChannelTheme]),
           commercial = underlying.get("commercial").map(_.as[RawChannelCommercial]).getOrElse(defaults.commercial),
           content = underlying.get("content").map(_.as[RawChannelContentConfiguration]),
@@ -260,6 +266,46 @@ object RawReads {
         ))
       case err@_ ⇒ jsErrorInvalidJson(err)
     }
+  }
+
+  //noinspection ScalaStyle
+  def migrateHeaderToSitebuildingFields(mrh: Option[RawChannelHeader], ms: Option[RawSponsoringConfig]): Option[RawChannelSiteBuilding] = {
+
+    // header (done)
+    val headerFields = mrh.map { rh =>
+      val fields = new HashMap[String, String]()
+      rh.label.foreach(v => fields.+("header_label" -> v))
+      rh.logo.foreach(v => fields.+("header_logo" -> v))
+      rh.headerReference.map(_.path).foreach(v => fields.+("header_href" -> v))
+      rh.slogan.foreach(v => fields.+("header_slogan" -> v))
+      rh.sloganReference.map(_.path).foreach(v => fields.+("header_slogan_href" -> v))
+      fields.+("header_hidden" -> rh.hidden)
+      fields.+("sponsoring_ad_indicator" -> rh.adIndicator) //todo: right mapping?
+      fields
+    }
+
+    // partner header
+    //todo: where to get
+
+    // footer
+    //todo: where to get
+
+    // sponsoring
+   val sponsorfields = ms.map { s =>
+      val fields = new HashMap[String, String]()
+      fields.+("sponsoring_hidden" -> s.hidden)
+      s.logo.foreach(v => fields.+("sponsoring_logo" -> v))
+      s.link.map(_.path).foreach(v => fields.+("sponsoring_logo_href" -> v))
+      s.slogan.foreach(v => fields.+("sponsoring_slogan" -> v))
+      // for "sponsoring_ad_indicator" see "header" above
+      s.brandstation //todo: what to do with this?
+     fields
+    }
+
+    if (sponsorfields.isDefined || headerFields.isDefined) {
+      Some(RawChannelSiteBuilding(Some(sponsorfields.getOrElse(Map.empty) ++ headerFields.getOrElse(Map.empty)), None, None))
+    } else None
+
   }
 
   implicit lazy val rawChannelReads: Reads[RawChannel] = new Reads[RawChannel] {
