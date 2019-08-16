@@ -253,7 +253,7 @@ object RawReads {
           siteBuilding = underlying.get("siteBuilding")
               .map(_.as[RawChannelSiteBuilding])
               .filterNot(_.isEmpty)
-            .orElse(migrateHeaderToSitebuildingFields(
+            .orElse(sitebuildingMigration(
               underlying.get("header").map(_.as[RawChannelHeader]),
               underlying.get("sponsoring").map(_.as[RawSponsoringConfig]))
             ),
@@ -269,7 +269,7 @@ object RawReads {
   }
 
   //noinspection ScalaStyle
-  def migrateHeaderToSitebuildingFields(mrh: Option[RawChannelHeader], ms: Option[RawSponsoringConfig]): Option[RawChannelSiteBuilding] = {
+  def sitebuildingMigration(mrh: Option[RawChannelHeader], ms: Option[RawSponsoringConfig]): Option[RawChannelSiteBuilding] = {
 
     // header (done)
     val headerFields = mrh.map { rh =>
@@ -285,10 +285,10 @@ object RawReads {
     }
 
     // partner header
-    //todo: where to get
+    //todo: where to get partner data
 
     // footer
-    //todo: where to get
+    //todo: where to get footer data
 
     // sponsoring
    val sponsorfields = ms.map { s =>
@@ -298,12 +298,13 @@ object RawReads {
       s.link.map(_.path).foreach(v => fields.+("sponsoring_logo_href" -> v))
       s.slogan.foreach(v => fields.+("sponsoring_slogan" -> v))
       // for "sponsoring_ad_indicator" see "header" above
-      s.brandstation //todo: what to do with this?
+      s.brandstation //todo: what to do with this field?
      fields
     }
 
     if (sponsorfields.isDefined || headerFields.isDefined) {
       Some(RawChannelSiteBuilding(Some(sponsorfields.getOrElse(Map.empty) ++ headerFields.getOrElse(Map.empty)), None, None))
+      // todo: where to get sub_navigation: Option[Seq[RawSectionReference]] and elements: Option[Seq[RawElement]]
     } else None
 
   }
