@@ -376,7 +376,9 @@ case class RawSponsoringConfig(logo: Option[String] = None,
                                slogan: Option[String] = None,
                                hidden: Boolean = false,
                                link: Option[RawSectionReference] = None,
-                               brandstation: Option[String] = None)
+                               brandstation: Option[String] = None) {
+  lazy val isEmpty: Boolean = this == RawSponsoringConfig()
+}
 
 /**
   * Channel Site-Building. Configure Header, Footer and Sponsoring
@@ -391,13 +393,14 @@ case class RawChannelSiteBuilding(fields: Option[Map[String, String]] = None,
 
   lazy val unwrappedSubNavigation: Seq[RawSectionReference] = sub_navigation.getOrElse(Nil)
   lazy val unwrappedElements: Seq[RawElement] = elements.getOrElse(Nil)
+  lazy val unwrappedFields: Map[String, String] = fields.getOrElse(Map.empty)
 
   /**
     * Channel Sitebuilding is empty when:
     *  - it has never been configured (default constructor)
     *  - it was already configured and deleted (consisting only of empty fields map)
     */
-  lazy val isEmpty: Boolean = this == RawChannelSiteBuilding() || this == RawChannelSiteBuilding(fields = Some(Map.empty[String, String]))
+  lazy val isEmpty: Boolean = this == RawChannelSiteBuilding() || fields.isEmpty
 }
 
 /**

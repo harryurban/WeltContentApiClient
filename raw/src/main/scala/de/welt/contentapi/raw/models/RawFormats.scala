@@ -1,9 +1,10 @@
 package de.welt.contentapi.raw.models
 
+import de.welt.contentapi.utils.Loggable
 import play.api.libs.functional.syntax._
 import play.api.libs.json._
 
-import scala.collection.immutable.HashMap
+import scala.collection.mutable
 
 object RawFormats {
 
@@ -56,11 +57,11 @@ object RawFormats {
     Format[RawMetadata](rawMetadataReads, rawMetadataWrites)
   implicit lazy val rawChannelConfigurationFormat: Format[RawChannelConfiguration] =
     Format[RawChannelConfiguration](rawChannelConfigurationReads, rawChannelConfigurationWrites)
-implicit lazy val rawRawArticlePromotionFormat: Format[RawArticlePromotion] =
+  implicit lazy val rawRawArticlePromotionFormat: Format[RawArticlePromotion] =
     Format[RawArticlePromotion](rawRawArticlePromotionReads, rawArticlePromotionWrites)
 }
 
-object RawReads {
+object RawReads extends Loggable {
   private[models] def jsError(errorMessage: String, json: JsValue) =
     JsError(s"$errorMessage ${Json.prettyPrint(json)}")
 
@@ -76,6 +77,7 @@ object RawReads {
   implicit lazy val rawSectionReferenceReads: Reads[RawSectionReference] = Json.reads[RawSectionReference]
   implicit lazy val rawChannelSponsoringReads: Reads[RawSponsoringConfig] = new Reads[RawSponsoringConfig] {
     private lazy val defaults: RawSponsoringConfig = RawSponsoringConfig()
+
     override def reads(json: JsValue): JsResult[RawSponsoringConfig] = json match {
       case JsObject(underlying) ⇒ JsSuccess(RawSponsoringConfig(
         logo = underlying.get("logo").map(_.as[String]),
@@ -116,6 +118,7 @@ object RawReads {
 
   implicit lazy val rawChannelHeaderReads: Reads[RawChannelHeader] = new Reads[RawChannelHeader] {
     private lazy val defaults: RawChannelHeader = RawChannelHeader()
+
     override def reads(json: JsValue): JsResult[RawChannelHeader] = json match {
       case JsObject(underlying) ⇒ (for {
         hidden ← underlying.get("hidden").map(_.as[Boolean]).orElse(Some(defaults.hidden))
@@ -140,6 +143,7 @@ object RawReads {
 
   implicit lazy val rawChannelTaboolaCommercialReads: Reads[RawChannelTaboolaCommercial] = new Reads[RawChannelTaboolaCommercial] {
     private lazy val defaults: RawChannelTaboolaCommercial = RawChannelTaboolaCommercial()
+
     override def reads(json: JsValue): JsResult[RawChannelTaboolaCommercial] = json match {
       case JsObject(underlying) ⇒ (for {
         showNews ← underlying.get("showNews").map(_.as[Boolean]).orElse(Some(defaults.showNews))
@@ -160,6 +164,7 @@ object RawReads {
 
   implicit lazy val rawChannelCommercialReads = new Reads[RawChannelCommercial] {
     private lazy val defaults: RawChannelCommercial = RawChannelCommercial()
+
     override def reads(json: JsValue): JsResult[RawChannelCommercial] = json match {
       case JsObject(underlying) ⇒ (for {
         definesAdTag ← underlying.get("definesAdTag").map(_.as[Boolean]).orElse(Some(defaults.definesAdTag))
@@ -242,21 +247,22 @@ object RawReads {
 
   implicit lazy val rawChannelConfigurationReads: Reads[RawChannelConfiguration] = new Reads[RawChannelConfiguration] {
     private lazy val defaults: RawChannelConfiguration = RawChannelConfiguration()
+
     override def reads(json: JsValue): JsResult[RawChannelConfiguration] = json match {
       case JsObject(underlying) ⇒
+        val maybeChannelHeader = underlying.get("header").map(_.as[RawChannelHeader]).filterNot(_.isEmpty)
+        val maybeSponsoringConfig = underlying.get("sponsoring").map(_.as[RawSponsoringConfig]).filterNot(_.isEmpty)
+
         JsSuccess(RawChannelConfiguration(
           metadata = underlying.get("metadata").map(_.as[RawChannelMetadata]),
-          header = underlying.get("header").map(_.as[RawChannelHeader]),
-          sponsoring = underlying.get("sponsoring")
-            .map(_.as[RawSponsoringConfig])
+          header = maybeChannelHeader,
+          sponsoring = maybeSponsoringConfig
             .getOrElse(defaults.sponsoring),
-          siteBuilding = underlying.get("siteBuilding")
-              .map(_.as[RawChannelSiteBuilding])
-              .filterNot(_.isEmpty)
-            .orElse(sitebuildingMigration(
-              underlying.get("header").map(_.as[RawChannelHeader]),
-              underlying.get("sponsoring").map(_.as[RawSponsoringConfig]))
-            ),
+          siteBuilding = sitebuildingMigration(
+            maybeChannelHeader,
+            maybeSponsoringConfig,
+            underlying.get("siteBuilding").map(_.as[RawChannelSiteBuilding]).filterNot(_.isEmpty)
+          ),
           theme = underlying.get("theme").map(_.as[RawChannelTheme]),
           commercial = underlying.get("commercial").map(_.as[RawChannelCommercial]).getOrElse(defaults.commercial),
           content = underlying.get("content").map(_.as[RawChannelContentConfiguration]),
@@ -269,44 +275,67 @@ object RawReads {
   }
 
   //noinspection ScalaStyle
-  def sitebuildingMigration(mrh: Option[RawChannelHeader], ms: Option[RawSponsoringConfig]): Option[RawChannelSiteBuilding] = {
+  def sitebuildingMigration(oldHeader: Option[RawChannelHeader], oldSponsoring: Option[RawSponsoringConfig], newSitebuilding: Option[RawChannelSiteBuilding]): Option[RawChannelSiteBuilding] = {
 
-    // header (done)
-    val headerFields = mrh.map { rh =>
-      val fields = new HashMap[String, String]()
-      rh.label.foreach(v => fields.+("header_label" -> v))
-      rh.logo.foreach(v => fields.+("header_logo" -> v))
-      rh.headerReference.map(_.path).foreach(v => fields.+("header_href" -> v))
-      rh.slogan.foreach(v => fields.+("header_slogan" -> v))
-      rh.sloganReference.map(_.path).foreach(v => fields.+("header_slogan_href" -> v))
-      fields.+("header_hidden" -> rh.hidden)
-      fields.+("sponsoring_ad_indicator" -> rh.adIndicator) //todo: right mapping?
+    val fieldsFromOldHeader = oldHeader.map { h =>
+      val fields = new mutable.HashMap[String, String]()
+      h.label.foreach(v => fields += ("header_label" -> v))
+      h.logo.foreach(v => fields += ("header_logo" -> v))
+      h.headerReference.flatMap(_.path).foreach(v => fields += ("header_href" -> v))
+      h.slogan.foreach(v => fields += ("header_slogan" -> v))
+      h.sloganReference.flatMap(_.path).foreach(v => fields += ("header_slogan_href" -> v))
+      fields += ("header_hidden" -> h.hidden.toString)
+      fields += ("sponsoring_ad_indicator" -> h.adIndicator.toString)
       fields
     }
 
-    // partner header
-    //todo: where to get partner data
-
-    // footer
-    //todo: where to get footer data
-
-    // sponsoring
-   val sponsorfields = ms.map { s =>
-      val fields = new HashMap[String, String]()
-      fields.+("sponsoring_hidden" -> s.hidden)
-      s.logo.foreach(v => fields.+("sponsoring_logo" -> v))
-      s.link.map(_.path).foreach(v => fields.+("sponsoring_logo_href" -> v))
-      s.slogan.foreach(v => fields.+("sponsoring_slogan" -> v))
+    val fieldsFromOldSponsoring = oldSponsoring.map { s =>
+      val fields = new mutable.HashMap[String, String]()
+      fields += ("sponsoring_hidden" -> s.hidden.toString)
+      s.logo.foreach(v => fields += ("sponsoring_logo" -> v))
+      s.link.flatMap(_.path).foreach(v => fields += ("sponsoring_logo_href" -> v))
+      s.slogan.foreach(v => fields += ("sponsoring_slogan" -> v))
       // for "sponsoring_ad_indicator" see "header" above
-      s.brandstation //todo: what to do with this field?
-     fields
+      s.brandstation.foreach(v => fields += ("sponsoring_enclosure" -> v))
+      fields
     }
 
-    if (sponsorfields.isDefined || headerFields.isDefined) {
-      Some(RawChannelSiteBuilding(Some(sponsorfields.getOrElse(Map.empty) ++ headerFields.getOrElse(Map.empty)), None, None))
-      // todo: where to get sub_navigation: Option[Seq[RawSectionReference]] and elements: Option[Seq[RawElement]]
-    } else None
+    val renamedAndMergedOldFields: collection.Map[_ <: String, String] = fieldsFromOldSponsoring.getOrElse(Map.empty) ++ fieldsFromOldHeader.getOrElse(Map.empty)
 
+    if (newSitebuilding.isDefined) {
+      var siteBuilding = newSitebuilding.get
+      def siteBuildingFields = siteBuilding.fields.getOrElse(Map.empty)
+
+      // clean up mess of `header_logo` to make place for dropdown header logo
+      siteBuildingFields.get("header_logo").foreach { id =>
+        var mutableFields = siteBuildingFields
+        mutableFields += ("header_logo_escenic" -> id)
+        mutableFields -= "header_logo"
+        siteBuilding = siteBuilding.copy(fields = Some(mutableFields))
+      }
+      // clean up mess of `sponsoring_logo` to make place for dropdown sponsoring logo
+      siteBuildingFields.get("sponsoring_logo").foreach { id =>
+        var mutableFields = siteBuildingFields
+        mutableFields += ("sponsoring_logo_escenic" -> id)
+        mutableFields -= "sponsoring_logo"
+        siteBuilding = siteBuilding.copy(fields = Some(mutableFields))
+      }
+
+      val mergedFields: collection.Map[String, String] = renamedAndMergedOldFields ++ siteBuildingFields
+      val subNavi = siteBuilding.sub_navigation.orElse(oldHeader.flatMap(_.sectionReferences)) // new references win, old ones only as backup for migration
+
+      Some(siteBuilding.copy(if (mergedFields.nonEmpty) Some(mergedFields.toMap) else None, subNavi))
+    }
+    else {
+      val oldReferences: Option[Seq[RawSectionReference]] = oldHeader.map(_.unwrappedSectionReferences)
+      if (renamedAndMergedOldFields.nonEmpty || oldReferences.getOrElse(Nil).nonEmpty) {
+        Some(RawChannelSiteBuilding(
+          fields = if (renamedAndMergedOldFields.nonEmpty) Some(renamedAndMergedOldFields.toMap) else None,
+          sub_navigation = if (oldReferences.getOrElse(Nil).nonEmpty) oldReferences else None,
+          elements = None))
+      } else
+        None
+    }
   }
 
   implicit lazy val rawChannelReads: Reads[RawChannel] = new Reads[RawChannel] {
