@@ -393,16 +393,12 @@ case class RawChannelSiteBuilding(fields: Option[Map[String, String]] = None,
   def unwrappedElements: Seq[RawElement] = elements.getOrElse(Nil)
   def unwrappedFields: Map[String, String] = fields.getOrElse(Map.empty).filterNot(v => v._2.isBlank)
 
-  /**
-    * Channel Sitebuilding is empty when:
-    *  - it has never been configured (default constructor)
-    *  - it was already configured and deleted (consisting only of empty fields map)
-    */
   def isEmpty: Boolean = this == RawChannelSiteBuilding() || this == RawChannelSiteBuilding(fields = Some(Map.empty[String, String]))
   def headerFields: Map[String, String] = this.fields.getOrElse(Map.empty).filter(v => v._1.startsWith("header_")).filterNot(v => v._2.isBlank)
   def sponsoringFields: Map[String, String] = this.fields.getOrElse(Map.empty).filter(v => v._1.startsWith("sponsoring_")).filterNot(v => v._2.isBlank)
 
-  def emptyHeader: Boolean = headerFields == Map("header_hidden" -> "false")
+  // `header_hidden` comes from CMCF internal state, where hidden can only be `true` of `false`, but will never be undefined or missing
+  def emptyHeader: Boolean = headerFields == Map("header_hidden" -> "false") || headerFields == Map.empty
   def emptySponsoring: Boolean = sponsoringFields.isEmpty
 }
 
