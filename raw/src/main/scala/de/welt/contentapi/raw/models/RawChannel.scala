@@ -398,8 +398,8 @@ case class RawChannelSiteBuilding(fields: Option[Map[String, String]] = None,
   def sponsoringFields: Map[String, String] = this.fields.getOrElse(Map.empty).filter(v => v._1.startsWith("sponsoring_")).filterNot(v => v._2.isBlank)
 
   // `header_hidden` comes from CMCF internal state, where hidden can only be `true` of `false`, but will never be undefined or missing
-  def emptyHeader: Boolean = headerFields == Map("header_hidden" -> "false") || headerFields == Map.empty
-  def emptySponsoring: Boolean = sponsoringFields.isEmpty
+  def emptyHeader: Boolean = headerFields == Map("header_hidden" -> "false") || headerFields.isEmpty
+  def emptySponsoring: Boolean = sponsoringFields == Map("sponsoring_hidden" -> "false") || sponsoringFields.isEmpty
   def emptySubNavi: Boolean = unwrappedSubNavigation.isEmpty
   def emptyElements: Boolean = unwrappedElements.isEmpty
 
