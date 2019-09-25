@@ -391,7 +391,7 @@ case class RawChannelSiteBuilding(fields: Option[Map[String, String]] = None,
 
   def unwrappedSubNavigation: Seq[RawSectionReference] = sub_navigation.getOrElse(Nil)
   def unwrappedElements: Seq[RawElement] = elements.getOrElse(Nil)
-  def unwrappedFields: Map[String, String] = fields.getOrElse(Map.empty)
+  def unwrappedFields: Map[String, String] = fields.getOrElse(Map.empty).filterNot(v => v._2.isBlank)
 
   /**
     * Channel Sitebuilding is empty when:
@@ -399,8 +399,8 @@ case class RawChannelSiteBuilding(fields: Option[Map[String, String]] = None,
     *  - it was already configured and deleted (consisting only of empty fields map)
     */
   def isEmpty: Boolean = this == RawChannelSiteBuilding() || this == RawChannelSiteBuilding(fields = Some(Map.empty[String, String]))
-  def headerFields: Map[String, String] = this.fields.getOrElse(Map.empty).filter(v => v._1.startsWith("header_"))
-  def sponsoringFields: Map[String, String] = this.fields.getOrElse(Map.empty).filter(v => v._1.startsWith("sponsoring_"))
+  def headerFields: Map[String, String] = this.fields.getOrElse(Map.empty).filter(v => v._1.startsWith("header_")).filterNot(v => v._2.isBlank)
+  def sponsoringFields: Map[String, String] = this.fields.getOrElse(Map.empty).filter(v => v._1.startsWith("sponsoring_")).filterNot(v => v._2.isBlank)
 
   def emptyHeader: Boolean = headerFields == Map("header_hidden" -> "false")
   def emptySponsoring: Boolean = sponsoringFields.isEmpty
