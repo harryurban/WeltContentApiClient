@@ -87,23 +87,16 @@ class RawToApiConverter @Inject()(inheritanceCalculator: InheritanceCalculator) 
     * Alternative is to search for a parent that is a `Master` and use its Sitebuilding config (empty sitebuilding may be inherited to children)
     **/
   private[converter] def calculateSiteBuilding(rawChannel: RawChannel): Option[ApiSiteBuildingConfiguration] = {
-    var maybeChannelSitebuilding = rawChannel.config.siteBuilding.find(p => !p.isEmpty)
-
-    // if header or sponsoring are `empty` for current channel, merge fields with Master for inheritance
-    if (maybeChannelSitebuilding.exists(s => s.emptyHeader || s.emptySponsoring)) {
+    var maybeSitebuilding = rawChannel.config.siteBuilding.find(p => !p.isEmpty)
+    if (maybeSitebuilding.exists(_.isMasterInheritanceEligible)) {
+      // get master
       val masterSitebuilding = calculateMasterChannel(rawChannel).flatMap(_.config.siteBuilding).getOrElse(RawChannelSiteBuilding())
-      val channelSitebuilding = maybeChannelSitebuilding.getOrElse(RawChannelSiteBuilding())
-
-      // overwrite header_ fields from master
-      if (channelSitebuilding.emptyHeader) {
-        maybeChannelSitebuilding = maybeChannelSitebuilding.map(_.copy(fields = Some(channelSitebuilding.unwrappedFields ++ masterSitebuilding.headerFields)))
-      }
-      // overwrite sponsoring_ fields from master
-      if (channelSitebuilding.emptySponsoring) {
-        maybeChannelSitebuilding = maybeChannelSitebuilding.map(_.copy(fields = Some(channelSitebuilding.unwrappedFields ++ masterSitebuilding.sponsoringFields)))
-      }
+      // resolve Option
+      val channelSitebuilding = maybeSitebuilding.getOrElse(RawChannelSiteBuilding())
+      // override fields from master
+      maybeSitebuilding = Some(mergeSitebuildings(channelSitebuilding, masterSitebuilding))
     }
-      maybeChannelSitebuilding
+      maybeSitebuilding
       .map { result ⇒
         ApiSiteBuildingConfiguration(
           fields = result.fields,
@@ -121,6 +114,28 @@ class RawToApiConverter @Inject()(inheritanceCalculator: InheritanceCalculator) 
           )
         )
       }
+  }
+
+  private[converter] def mergeSitebuildings(channelSitebuilding: RawChannelSiteBuilding, masterSitebuilding: RawChannelSiteBuilding): RawChannelSiteBuilding = {
+    var mutableSitebuilding = channelSitebuilding
+
+    // use `header_` fields from Master, if channel defines none itself
+    if (channelSitebuilding.emptyHeader) {
+      mutableSitebuilding = mutableSitebuilding.copy(fields = Some(mutableSitebuilding.unwrappedFields ++ masterSitebuilding.headerFields))
+    }
+    // use `sponsoring_` fields from Master, if channel defines none itself
+    if (channelSitebuilding.emptySponsoring) {
+      mutableSitebuilding = mutableSitebuilding.copy(fields = Some(mutableSitebuilding.unwrappedFields ++ masterSitebuilding.sponsoringFields))
+    }
+    // use Elements from Master, if channel defines none itself
+    if (channelSitebuilding.unwrappedElements.isEmpty && masterSitebuilding.unwrappedElements.nonEmpty) {
+      mutableSitebuilding = mutableSitebuilding.copy(elements = masterSitebuilding.elements)
+    }
+    // use SubNavigation from Master, if channel defines none itself
+    if (channelSitebuilding.unwrappedSubNavigation.isEmpty && masterSitebuilding.unwrappedSubNavigation.nonEmpty) {
+      mutableSitebuilding = mutableSitebuilding.copy(sub_navigation = masterSitebuilding.sub_navigation)
+    }
+    mutableSitebuilding
   }
 
   /**
