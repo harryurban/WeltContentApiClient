@@ -13,55 +13,14 @@ class Raw2ApiSiteBuildingTest extends PlaySpec {
   //noinspection ScalaStyle
   trait SiteBuildingTreeScope {
     def spyRawToApiConverter = Mockito.spy(rawToApiConverter)
-    // @formatter:off
 
-    /**
-      * *S* = nonEmpty site building
-      * *s* = site building equals the default constructor
-      * *M* = is explicit master
-      * *m* = is implicit master, because 1st level child of root
-      *
-      *
-      *         (    0[root]   *S*    )
-      *         |            \
-      *      (10 *SM*)    (20 *M*)
-      *        |              \
-      *      (100)         (200 *S*)
-      *       |                \
-      *     (1000 *s*)     (2000 *S*)
-      */
+    // no sitebuilding
+    val channel = emptyWithIdAndChildren(200, Seq())
+    channel.config = RawChannelConfiguration()
 
-    // @formatter:on
-
-    val node100 = emptyWithIdAndChildren(100, Seq.empty)
-
-    val node10 = emptyWithIdAndChildren(10, Seq(node100))
-    node10.config = RawChannelConfiguration(siteBuilding = Some(RawChannelSiteBuilding(
-      fields = Some(Map("key1" -> "value2", "key2" -> "value2")),
-      sub_navigation = Some(Seq(RawSectionReference(Some("Label"), Some("/Path/")))),
-      elements = Some(Seq(
-        RawElement(
-          id = RawChannelElement.IdDefault,
-          `type` = "mood",
-          assets = Some(List(
-            RawAsset(
-              `type` = "image",
-              fields = Some(Map("key1" -> "value2", "key2" -> "value2"))
-            )
-          ))
-        )
-      ))
-    )), master = true)
-
-    /** 2XXX */
-    val node2000 = emptyWithId(200)
-    node2000.config = RawChannelConfiguration(siteBuilding = None)
-
-    val node200 = emptyWithIdAndChildren(200, Seq(node2000))
-    node200.config = RawChannelConfiguration()
-
-    val node20 = emptyWithIdAndChildren(20, Seq(node200))
-    node20.config = RawChannelConfiguration(siteBuilding = Some(RawChannelSiteBuilding(
+    // master and has everything to inherit
+    val master = emptyWithIdAndChildren(20, Seq(channel))
+    master.config = RawChannelConfiguration(siteBuilding = Some(RawChannelSiteBuilding(
       fields = Some(Map(
         "header_slogan" -> "Header Slogan",
         "sponsoring_slogan" -> "Sponsoring Slogan"
@@ -70,19 +29,17 @@ class Raw2ApiSiteBuildingTest extends PlaySpec {
       elements = Some(Seq(RawElement(id = "element id", `type` = "element type")))
     )))
 
-    /** root */
-    val root = emptyWithIdAndChildren(0, Seq(node10, node20))
+    /** fake tree */
+    val root = emptyWithIdAndChildren(0, Seq(master))
     root.updateParentRelations()
-
     import de.welt.contentapi.core.models.testImplicits.pathUpdater
-
     root.updatePaths()
   }
 
   "calculateSiteBuilding()" should {
 
     "look for a master and inherit `sponsoring_` values if channel.isMasterInheritanceEligible is true because no `sponsoring_` values are present" in new SiteBuildingTreeScope {
-      node200.config = RawChannelConfiguration(siteBuilding = Some(RawChannelSiteBuilding(
+      channel.config = RawChannelConfiguration(siteBuilding = Some(RawChannelSiteBuilding(
         fields = Some(Map(
           "header_slogan" -> "Header Slogan"
         )),
@@ -90,12 +47,12 @@ class Raw2ApiSiteBuildingTest extends PlaySpec {
         elements = Some(Seq(RawElement(id = "element id", `type` = "element type")))
       )))
 
-      spyRawToApiConverter.calculateSiteBuilding(node200).get.unwrappedFields.get("sponsoring_slogan") mustBe Some("Sponsoring Slogan")
-      Mockito.verify(spyRawToApiConverter, Mockito.atMostOnce()).calculateMasterChannel(node200)
+      spyRawToApiConverter.calculateSiteBuilding(channel).get.unwrappedFields.get("sponsoring_slogan") mustBe Some("Sponsoring Slogan")
+      Mockito.verify(spyRawToApiConverter, Mockito.atMostOnce()).calculateMasterChannel(channel)
     }
 
     "look for a master and inherit `header_` values if channel.isMasterInheritanceEligible is true because no `header` values are present" in new SiteBuildingTreeScope {
-      node200.config = RawChannelConfiguration(siteBuilding = Some(RawChannelSiteBuilding(
+      channel.config = RawChannelConfiguration(siteBuilding = Some(RawChannelSiteBuilding(
         fields = Some(Map(
           "sponsoring_slogan" -> "Sponsoring Slogan"
         )),
@@ -103,12 +60,12 @@ class Raw2ApiSiteBuildingTest extends PlaySpec {
         elements = Some(Seq(RawElement(id = "element id", `type` = "element type")))
       )))
 
-      spyRawToApiConverter.calculateSiteBuilding(node200).get.unwrappedFields.get("header_slogan") mustBe Some("Header Slogan")
-      Mockito.verify(spyRawToApiConverter, Mockito.atMostOnce()).calculateMasterChannel(node200)
+      spyRawToApiConverter.calculateSiteBuilding(channel).get.unwrappedFields.get("header_slogan") mustBe Some("Header Slogan")
+      Mockito.verify(spyRawToApiConverter, Mockito.atMostOnce()).calculateMasterChannel(channel)
     }
 
     "look for a master and inherit `elements` if channel.isMasterInheritanceEligible is true because no elements are present" in new SiteBuildingTreeScope {
-      node200.config = RawChannelConfiguration(siteBuilding = Some(RawChannelSiteBuilding(
+      channel.config = RawChannelConfiguration(siteBuilding = Some(RawChannelSiteBuilding(
         fields = Some(Map(
           "header_slogan" -> "Header Slogan",
           "sponsoring_slogan" -> "Sponsoring Slogan"
@@ -117,12 +74,12 @@ class Raw2ApiSiteBuildingTest extends PlaySpec {
         elements = None
       )))
 
-      spyRawToApiConverter.calculateSiteBuilding(node200).get.unwrappedElements.size mustBe 1
-      Mockito.verify(spyRawToApiConverter, Mockito.atMostOnce()).calculateMasterChannel(node200)
+      spyRawToApiConverter.calculateSiteBuilding(channel).get.unwrappedElements.size mustBe 1
+      Mockito.verify(spyRawToApiConverter, Mockito.atMostOnce()).calculateMasterChannel(channel)
     }
 
     "look for a master and inherit `sub_navigation` if channel.isMasterInheritanceEligible is true because no sub_navigation is present" in new SiteBuildingTreeScope {
-      node200.config = RawChannelConfiguration(siteBuilding = Some(RawChannelSiteBuilding(
+      channel.config = RawChannelConfiguration(siteBuilding = Some(RawChannelSiteBuilding(
         fields = Some(Map(
           "header_slogan" -> "Header Slogan",
           "sponsoring_slogan" -> "Sponsoring Slogan"
@@ -131,12 +88,12 @@ class Raw2ApiSiteBuildingTest extends PlaySpec {
         elements = Some(Seq(RawElement(id = "element id", `type` = "element type")))
       )))
 
-      spyRawToApiConverter.calculateSiteBuilding(node200).get.unwrappedSubNavigation.size mustBe 1
-      Mockito.verify(spyRawToApiConverter, Mockito.atMostOnce()).calculateMasterChannel(node200)
+      spyRawToApiConverter.calculateSiteBuilding(channel).get.unwrappedSubNavigation.size mustBe 1
+      Mockito.verify(spyRawToApiConverter, Mockito.atMostOnce()).calculateMasterChannel(channel)
     }
 
     "never look for a master and inherit values if channel.isMasterInheritanceEligible is false" in new SiteBuildingTreeScope {
-      node200.config = RawChannelConfiguration(siteBuilding = Some(RawChannelSiteBuilding(
+      channel.config = RawChannelConfiguration(siteBuilding = Some(RawChannelSiteBuilding(
         fields = Some(Map(
           "header_slogan" -> "Header Slogan",
           "sponsoring_slogan" -> "Sponsoring Slogan"
@@ -145,8 +102,8 @@ class Raw2ApiSiteBuildingTest extends PlaySpec {
         elements = Some(Seq(RawElement(id = "element id", `type` = "element type")))
       )))
 
-      spyRawToApiConverter.calculateSiteBuilding(node200).isDefined mustBe true
-      Mockito.verify(spyRawToApiConverter, Mockito.never()).calculateMasterChannel(node200)
+      spyRawToApiConverter.calculateSiteBuilding(channel).isDefined mustBe true
+      Mockito.verify(spyRawToApiConverter, Mockito.never()).calculateMasterChannel(channel)
     }
 
 
