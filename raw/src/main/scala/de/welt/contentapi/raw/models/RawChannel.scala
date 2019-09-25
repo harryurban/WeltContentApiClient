@@ -389,15 +389,21 @@ case class RawChannelSiteBuilding(fields: Option[Map[String, String]] = None,
                                   sub_navigation: Option[Seq[RawSectionReference]] = None,
                                   elements: Option[Seq[RawElement]] = None) {
 
-  lazy val unwrappedSubNavigation: Seq[RawSectionReference] = sub_navigation.getOrElse(Nil)
-  lazy val unwrappedElements: Seq[RawElement] = elements.getOrElse(Nil)
+  def unwrappedSubNavigation: Seq[RawSectionReference] = sub_navigation.getOrElse(Nil)
+  def unwrappedElements: Seq[RawElement] = elements.getOrElse(Nil)
+  def unwrappedFields: Map[String, String] = fields.getOrElse(Map.empty)
 
   /**
     * Channel Sitebuilding is empty when:
     *  - it has never been configured (default constructor)
     *  - it was already configured and deleted (consisting only of empty fields map)
     */
-  lazy val isEmpty: Boolean = this == RawChannelSiteBuilding() || this == RawChannelSiteBuilding(fields = Some(Map.empty[String, String]))
+  def isEmpty: Boolean = this == RawChannelSiteBuilding() || this == RawChannelSiteBuilding(fields = Some(Map.empty[String, String]))
+  def headerFields: Map[String, String] = this.fields.getOrElse(Map.empty).filter(v => v._1.startsWith("header_"))
+  def sponsoringFields: Map[String, String] = this.fields.getOrElse(Map.empty).filter(v => v._1.startsWith("sponsoring_"))
+
+  def emptyHeader: Boolean = headerFields == Map("header_hidden" -> "false")
+  def emptySponsoring: Boolean = sponsoringFields.isEmpty
 }
 
 /**

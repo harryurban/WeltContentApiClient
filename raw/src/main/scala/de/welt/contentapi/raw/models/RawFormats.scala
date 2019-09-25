@@ -3,6 +3,8 @@ package de.welt.contentapi.raw.models
 import play.api.libs.functional.syntax._
 import play.api.libs.json._
 
+import scala.collection.{immutable, mutable}
+
 object RawFormats {
 
   import RawReads._
@@ -240,17 +242,23 @@ object RawReads {
 
   implicit lazy val rawChannelConfigurationReads: Reads[RawChannelConfiguration] = new Reads[RawChannelConfiguration] {
     private lazy val defaults: RawChannelConfiguration = RawChannelConfiguration()
+
     override def reads(json: JsValue): JsResult[RawChannelConfiguration] = json match {
       case JsObject(underlying) ⇒
+        val maybeChannelHeader = underlying.get("header").map(_.as[RawChannelHeader])
+        val maybeSponsoringConfig = underlying.get("sponsoring").map(_.as[RawSponsoringConfig])
+        val maybeSiteBuilding = underlying.get("siteBuilding").map(_.as[RawChannelSiteBuilding]).filterNot(_.isEmpty)
+
         JsSuccess(RawChannelConfiguration(
           metadata = underlying.get("metadata").map(_.as[RawChannelMetadata]),
-          header = underlying.get("header").map(_.as[RawChannelHeader]),
-          sponsoring = underlying.get("sponsoring")
-            .map(_.as[RawSponsoringConfig])
+          header = maybeChannelHeader,
+          sponsoring = maybeSponsoringConfig
             .getOrElse(defaults.sponsoring),
-          siteBuilding = underlying.get("siteBuilding")
-              .map(_.as[RawChannelSiteBuilding])
-              .filterNot(_.isEmpty),
+          siteBuilding = sitebuildingMigration(
+            maybeChannelHeader,
+            maybeSponsoringConfig,
+            maybeSiteBuilding
+          ),
           theme = underlying.get("theme").map(_.as[RawChannelTheme]),
           commercial = underlying.get("commercial").map(_.as[RawChannelCommercial]).getOrElse(defaults.commercial),
           content = underlying.get("content").map(_.as[RawChannelContentConfiguration]),
@@ -259,6 +267,91 @@ object RawReads {
           master = underlying.get("master").map(_.as[Boolean]).getOrElse(defaults.master)
         ))
       case err@_ ⇒ jsErrorInvalidJson(err)
+    }
+  }
+
+  //noinspection ScalaStyle
+  def sitebuildingMigration(oldHeader: Option[RawChannelHeader], oldSponsoring: Option[RawSponsoringConfig], newSitebuilding: Option[RawChannelSiteBuilding]): Option[RawChannelSiteBuilding] = {
+    lazy val fieldsFromOldHeader: Option[mutable.Map[String, String]] = oldHeader.map { header =>
+      val fields = new mutable.HashMap[String, String]()
+      header.label.foreach(v => fields += ("header_label" -> v))
+      header.logo.foreach(v => fields += ("header_logo" -> v))
+      header.headerReference.flatMap(_.path).foreach(v => fields += ("header_href" -> v))
+      header.slogan.foreach(v => fields += ("header_slogan" -> v))
+      header.sloganReference.flatMap(_.path).foreach(v => fields += ("header_slogan_href" -> v))
+      fields += ("header_hidden" -> header.hidden.toString)
+      fields += ("sponsoring_ad_indicator" -> header.adIndicator.toString)
+      fields
+    }
+
+    lazy val fieldsFromOldSponsoring: Option[mutable.Map[String, String]] = oldSponsoring.map { s =>
+      val fields = new mutable.HashMap[String, String]()
+      fields += ("sponsoring_hidden" -> s.hidden.toString)
+      s.logo.foreach(v => fields += ("sponsoring_logo" -> v))
+      s.link.flatMap(_.path).foreach(v => fields += ("sponsoring_logo_href" -> v))
+      s.slogan.foreach(v => fields += ("sponsoring_slogan" -> v))
+      // for "sponsoring_ad_indicator" see "header" above
+      s.brandstation.foreach(v => fields += ("sponsoring_enclosure" -> v))
+      fields
+    }
+
+    lazy val oldSponsoringFields: collection.Map[String, String] = fieldsFromOldSponsoring.getOrElse(Map.empty).toMap
+    lazy val oldHeaderFields: collection.Map[String, String] = fieldsFromOldHeader.getOrElse(mutable.HashMap.empty).toMap
+    lazy val renamedAndMergedOldFields: collection.Map[String, String] = oldSponsoringFields ++ oldHeaderFields
+
+    if (newSitebuilding.isDefined) {
+      var siteBuilding = newSitebuilding.get
+      if (siteBuilding.fields.getOrElse(Map.empty).contains("migrated")) {
+        println("already migrated, skipping")
+        return newSitebuilding
+      }
+      def siteBuildingFields = siteBuilding.fields.getOrElse(Map.empty)
+
+      // clean up mess of `header_logo` to make place for dropdown header logo
+      siteBuildingFields.get("header_logo").foreach { id =>
+        var mutableFields = siteBuildingFields
+        mutableFields += ("header_logo_escenic" -> id)
+        mutableFields -= "header_logo"
+        siteBuilding = siteBuilding.copy(fields = Some(mutableFields))
+      }
+      // clean up mess of `sponsoring_logo` to make place for dropdown sponsoring logo
+      siteBuildingFields.get("sponsoring_logo").foreach { id =>
+        var mutableFields = siteBuildingFields
+        mutableFields += ("sponsoring_logo_escenic" -> id)
+        mutableFields -= "sponsoring_logo"
+        siteBuilding = siteBuilding.copy(fields = Some(mutableFields))
+      }
+
+      /* consistently name fields that hold an escenic id ?
+      siteBuildingFields.get("partner_header_logo").foreach { id =>
+        var mutableFields = siteBuildingFields
+        mutableFields += ("partner_header_logo_escenic" -> id)
+        siteBuilding = siteBuilding.copy(fields = Some(mutableFields))
+      }
+
+      siteBuildingFields.get("footer_logo").foreach { id =>
+        var mutableFields = siteBuildingFields
+        mutableFields += ("footer_logo_escenic" -> id)
+        siteBuilding = siteBuilding.copy(fields = Some(mutableFields))
+      }
+      **/
+
+
+      val migrationHint: scala.collection.Map[String, String] = Map("migrated" -> "true")
+      val mergedFields: scala.collection.Map[String, String] = renamedAndMergedOldFields ++ siteBuildingFields ++ migrationHint
+      val subNavi = siteBuilding.sub_navigation.orElse(oldHeader.flatMap(_.sectionReferences)) // new references win, old ones only as backup for migration
+
+      Some(siteBuilding.copy(if (mergedFields.nonEmpty) Some(mergedFields.toMap) else None, subNavi))
+    }
+    else {
+      val oldReferences: Option[Seq[RawSectionReference]] = oldHeader.map(_.unwrappedSectionReferences)
+      if (renamedAndMergedOldFields.nonEmpty || oldReferences.getOrElse(Nil).nonEmpty) {
+        Some(RawChannelSiteBuilding(
+          fields = if (renamedAndMergedOldFields.nonEmpty) Some(renamedAndMergedOldFields.toMap) else None,
+          sub_navigation = if (oldReferences.getOrElse(Nil).nonEmpty) oldReferences else None,
+          elements = None))
+      } else
+        None
     }
   }
 
