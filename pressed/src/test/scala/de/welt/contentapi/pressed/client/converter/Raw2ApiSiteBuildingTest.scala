@@ -14,11 +14,11 @@ class Raw2ApiSiteBuildingTest extends PlaySpec {
   trait SiteBuildingTreeScope {
     def spyRawToApiConverter = Mockito.spy(rawToApiConverter)
 
-    // no sitebuilding
+    /** no sitebuilding */
     val channel = emptyWithIdAndChildren(200, Seq())
     channel.config = RawChannelConfiguration()
 
-    // master and has everything to inherit
+    /** master and has everything to inherit */
     val master = emptyWithIdAndChildren(20, Seq(channel))
     master.config = RawChannelConfiguration(siteBuilding = Some(RawChannelSiteBuilding(
       fields = Some(Map(
@@ -29,7 +29,7 @@ class Raw2ApiSiteBuildingTest extends PlaySpec {
       elements = Some(Seq(RawElement(id = "element id", `type` = "element type")))
     )))
 
-    /** fake tree */
+    /** fake root tree */
     val root = emptyWithIdAndChildren(0, Seq(master))
     root.updateParentRelations()
     import de.welt.contentapi.core.models.testImplicits.pathUpdater
