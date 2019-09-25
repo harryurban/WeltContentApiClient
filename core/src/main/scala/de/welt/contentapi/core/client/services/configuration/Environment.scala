@@ -4,7 +4,7 @@ import com.typesafe.config.{Config, ConfigFactory}
 import de.welt.contentapi.utils.Loggable
 import play.api.Configuration
 
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 import scala.collection.mutable
 import scala.util.{Success, Try}
 
