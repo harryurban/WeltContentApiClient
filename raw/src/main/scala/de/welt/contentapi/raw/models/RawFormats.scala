@@ -298,11 +298,11 @@ object RawReads {
     lazy val oldSponsoringFields: collection.Map[String, String] = fieldsFromOldSponsoring.getOrElse(Map.empty).toMap
     lazy val oldHeaderFields: collection.Map[String, String] = fieldsFromOldHeader.getOrElse(mutable.HashMap.empty).toMap
     lazy val renamedAndMergedOldFields: collection.Map[String, String] = oldSponsoringFields ++ oldHeaderFields
+    lazy val migrationHint: scala.collection.Map[String, String] = Map("migrated" -> "true")
 
     if (newSitebuilding.isDefined) {
       var siteBuilding = newSitebuilding.get
       if (siteBuilding.fields.getOrElse(Map.empty).contains("migrated")) {
-        println("already migrated, skipping")
         return newSitebuilding
       }
       def siteBuildingFields = siteBuilding.fields.getOrElse(Map.empty)
@@ -336,8 +336,6 @@ object RawReads {
       }
       **/
 
-
-      val migrationHint: scala.collection.Map[String, String] = Map("migrated" -> "true")
       val mergedFields: scala.collection.Map[String, String] = renamedAndMergedOldFields ++ siteBuildingFields ++ migrationHint
       val subNavi = siteBuilding.sub_navigation.orElse(oldHeader.flatMap(_.sectionReferences)) // new references win, old ones only as backup for migration
 
@@ -347,7 +345,7 @@ object RawReads {
       val oldReferences: Option[Seq[RawSectionReference]] = oldHeader.map(_.unwrappedSectionReferences)
       if (renamedAndMergedOldFields.nonEmpty || oldReferences.getOrElse(Nil).nonEmpty) {
         Some(RawChannelSiteBuilding(
-          fields = if (renamedAndMergedOldFields.nonEmpty) Some(renamedAndMergedOldFields.toMap) else None,
+          fields = if (renamedAndMergedOldFields.nonEmpty) Some(renamedAndMergedOldFields.toMap ++ migrationHint) else None,
           sub_navigation = if (oldReferences.getOrElse(Nil).nonEmpty) oldReferences else None,
           elements = None))
       } else
