@@ -394,14 +394,18 @@ case class RawChannelSiteBuilding(fields: Option[Map[String, String]] = None,
   def unwrappedFields: Map[String, String] = fields.getOrElse(Map.empty).filterNot(v => v._2.isBlank)
 
   def isEmpty: Boolean = this == RawChannelSiteBuilding() || this == RawChannelSiteBuilding(fields = Some(Map.empty[String, String]))
-  def headerFields: Map[String, String] = this.fields.getOrElse(Map.empty).filter(v => v._1.startsWith("header_")).filterNot(v => v._2.isBlank)
-  def sponsoringFields: Map[String, String] = this.fields.getOrElse(Map.empty).filter(v => v._1.startsWith("sponsoring_")).filterNot(v => v._2.isBlank)
+  def headerFields: Map[String, String] = fieldsFilteredBy("header_")
+  def sponsoringFields: Map[String, String] = fieldsFilteredBy("sponsoring_")
 
   // `header_hidden` comes from CMCF internal state, where hidden can only be `true` of `false`, but will never be undefined or missing
   def emptyHeader: Boolean = headerFields == Map("header_hidden" -> "false") || headerFields.isEmpty
   def emptySponsoring: Boolean = sponsoringFields == Map("sponsoring_hidden" -> "false") || sponsoringFields.isEmpty
   def emptySubNavi: Boolean = unwrappedSubNavigation.isEmpty
   def emptyElements: Boolean = unwrappedElements.isEmpty
+
+  private def fieldsFilteredBy(prefix: String) = {
+    this.fields.getOrElse(Map.empty).filter(v => v._1.startsWith(prefix)).filterNot(v => v._2.isBlank)
+  }
 
   // if anything is empty, look for Master, that may inherit some values
   def isMasterInheritanceEligible: Boolean = emptyHeader || emptySponsoring || emptySubNavi || emptyElements
