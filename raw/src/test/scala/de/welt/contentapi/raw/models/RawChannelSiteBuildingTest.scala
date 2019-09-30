@@ -6,8 +6,6 @@ class RawChannelSiteBuildingTest extends PlaySpec {
 
   "unwrappedFields()" should {
 
-    //  def emptySponsoring: Boolean = sponsoringFields.isEmpty
-
     "filter empty values" in {
       RawChannelSiteBuilding(fields = Some(Map("sponsoring_slogan" -> ""))).headerFields mustBe Map.empty
     }
