@@ -35,7 +35,8 @@ class MigrationTests extends PlaySpec {
         "header_logo" -> "kompakt",
         "header_hidden" -> "false",
         "header_label" -> "header_old_section_name_label",
-        "header_href" -> "/header_old_section_name_header_link/"
+        "header_href" -> "/header_old_section_name_header_link/",
+        "migrated" -> "true"
       )
       sitebuilding.fields.getOrElse(Map.empty) mustBe migratedFields
     }
@@ -80,7 +81,8 @@ class MigrationTests extends PlaySpec {
         "sponsoring_logo_href" -> "/sponsoring_old_sponsoring_logo_link/",
         "sponsoring_slogan" -> "sponsoring_old_sponsoring_slogan",
         "sponsoring_hidden" -> "false",
-        "sponsoring_enclosure" -> "presented")
+        "sponsoring_enclosure" -> "presented",
+        "migrated" -> "true")
     }
 
     "sitebuilding references win over old ones" in {
@@ -393,7 +395,8 @@ class MigrationTests extends PlaySpec {
           |      "footer_legal": "",
           |      "footer_hidden": "",
           |      "footer_body": "",
-          |      "partner_header_body": ""
+          |      "partner_header_body": "",
+          |      "migrated" : "true"
           |    },
           |    "sub_navigation": [
           |      {
