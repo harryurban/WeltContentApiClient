@@ -33,36 +33,6 @@ class RawReadsTest extends PlaySpec {
         .asOpt
         .flatMap(_.siteBuilding) mustBe Some(RawChannelSiteBuilding(fields = Some(Map("foo" -> "bar"))))
     }
-
-    "ignore known empty properties" in {
-      val json: String =
-        """{
-          |  "siteBuilding": {
-          |    "fields": {
-          |      "foo": "bar"
-          |    }
-          |  },
-          |  "commercial": {}
-          |}""".stripMargin
-      Json.parse(json)
-        .validate[RawChannelConfiguration](rawChannelConfigurationReads)
-        .asOpt
-        .flatMap(_.siteBuilding) mustBe Some(RawChannelSiteBuilding(fields = Some(Map("foo" -> "bar"))))
-    }
-
-    "ignore known empty properties with empty values" in {
-      val json: String =
-        """{
-          |  "siteBuilding": {
-          |    "fields": {}
-          |  },
-          |  "master": true
-          |}""".stripMargin
-      Json.parse(json)
-        .validate[RawChannelConfiguration](rawChannelConfigurationReads)
-        .asOpt
-        .map(_.master) mustBe Some(true)
-    }
   }
 
   "RawChannelCommercialReads" must {
