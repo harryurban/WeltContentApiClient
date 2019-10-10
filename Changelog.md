@@ -1,5 +1,14 @@
 # Changelog
 
+## 5.1 (2019-10-10)
+
+### Changes
+- [RAW] Removed fields `header` and `sponsoring` from RawChannelConfiguration (moved to Sitebuilding)
+- [RAW] Removed model `RawChannelHeader`, 
+- [API] Removed `adIndicator` from `ApiCommercialConfiguration`  (moved to Sitebuilding)
+- [API] model `RawSponsoringConfig` is now only used for sponsorings above a stage (e.g. bwin) 
+- [API] RawToApiConverter: removed inheritance and calculation for old header and sponsoring 
+
 ## 5.0 (2019-10-08)
 
 ### Changes
