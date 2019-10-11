@@ -56,7 +56,7 @@ class RawReadsTest extends PlaySpec {
           |  "siteBuilding": {
           |    "fields": {}
           |  },
-          |  "master": "true"
+          |  "master": true
           |}""".stripMargin
       Json.parse(json)
         .validate[RawChannelConfiguration](rawChannelConfigurationReads)
