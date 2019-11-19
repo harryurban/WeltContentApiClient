@@ -1,5 +1,28 @@
 # Changelog
 
+## 7.0
+
+### Breaking Changes
+- [RAW] Removed fields `header` and `sponsoring` from RawChannelConfiguration (moved to Sitebuilding)
+- [RAW] Removed model `RawChannelHeader`, 
+- [API] Removed `adIndicator` from `ApiCommercialConfiguration`  (moved to Sitebuilding)
+- [API] model `RawSponsoringConfig` is now only used for sponsorings above a stage (e.g. bwin) 
+- [API] RawToApiConverter: removed inheritance and calculation for old header and sponsoring 
+
+## 6.0 (2019-11-11)
+
+### Breaking Changes
+- [PRESSED] remove all services for accessing pre-pressed sections from Digger from S3
+- [PRESSED] make REST digger service public and rename to have same naming as `CiggerService`
+
+### To-Do for developers:
+Don't use `PressedSectionService` anymore. Use `DiggerService` directly
+
+## 5.3 (2019-10-30)
+
+### Changes
+- [RAW] removed mandatory field `adIndicator` as part of `RawArticlePromotion`
+
 ## 5.2 (2019-10-25)
 
 ### Changes
